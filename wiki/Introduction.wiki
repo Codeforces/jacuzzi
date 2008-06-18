@@ -1,0 +1,23 @@
+#summary Introduction into jacuzzi
+
+= Introduction =
+
+It is very easy to use jacuzzi. You don't need to spend a lot of time to learn how to use it. Think about it as a some wrapping code around JDBC.
+
+
+= Details =
+
+This is the sample code how to create and use jacuzzi DAOs:
+{{{
+    public static void main(String[] args) throws SQLException {
+        Connection connection = getConnectionUsingYourApplicationSpecificMethod();
+        
+        UserDao userDao = new UserDao(connection);
+        
+        User user = userDao.findById(1);
+        user.setName("Administrator");
+        userDao.save(user);
+        
+        connection.close();
+    }
+}}}
