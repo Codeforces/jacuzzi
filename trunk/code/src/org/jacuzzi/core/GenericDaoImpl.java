@@ -19,7 +19,7 @@ public class GenericDaoImpl<T,K> implements GenericDao<T,K> {
         return jacuzzi;
     }
 
-    public GenericDaoImpl(DataSource source) {
+    protected GenericDaoImpl(DataSource source) {
         jacuzzi = Jacuzzi.getJacuzzi(source);
         typeOracle = TypeOracle.getTypeOracle(getTypeClass());
     }
@@ -58,15 +58,24 @@ public class GenericDaoImpl<T,K> implements GenericDao<T,K> {
         try {
             List<Row> rows = jacuzzi.findRows(query, args);
 
-            List<T> result = new ArrayList<T>(rows.size());
-            for (Row row: rows) {
-                result.add(typeOracle.convertFromRow(row));
-            }
+            List<T> result = convertFromRows(rows);
 
             return result;
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    protected List<T> convertFromRows(List<Row> rows) {
+        List<T> result = new ArrayList<T>(rows.size());
+        for (Row row: rows) {
+            result.add(convertFromRow(row));
+        }
+        return result;
+    }
+
+    protected T convertFromRow(Row row) {
+        return typeOracle.convertFromRow(row);
     }
 
     public void save(T object) {

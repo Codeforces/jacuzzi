@@ -1,6 +1,7 @@
 package org.jacuzzi.core;
 
 import javax.sql.DataSource;
+import java.lang.reflect.Constructor;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
@@ -16,12 +17,14 @@ public class Jacuzzi {
      */
     private final DataSource dataSource;
 
+    private final Map<Class<?>, GenericDao<?,?>> daoCache = new HashMap<Class<?>, GenericDao<?,?>>();
+
     /**
      * Creates jacuzzi instance by {@code DataSource}.
      *
      * @param dataSource {@code DataSource} instance.
      */
-    public Jacuzzi(DataSource dataSource) {
+    protected Jacuzzi(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -122,6 +125,24 @@ public class Jacuzzi {
      */
     public Date findDate(String query, Object... args) throws SQLException {
         return (Date) findOne(query, args);
+    }
+
+    public <T extends GenericDao<?,?>> T getDao(Class<T> daoClazz) {
+        synchronized (daoCache) {
+            if (daoCache.containsKey(daoClazz)) {
+                return (T) daoCache.get(daoClazz);
+            } else {
+                try {
+                    Constructor constructor = daoClazz.getDeclaredConstructor(DataSource.class);
+                    constructor.setAccessible(true);
+                    GenericDao<?,?> dao = (GenericDao<?,?>) constructor.newInstance(dataSource);
+                    daoCache.put(daoClazz, dao);
+                    return (T) dao;
+                } catch (Exception e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        }
     }
 
     // Contains helper routine.
