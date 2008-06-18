@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+
+<project name="jacuzzi" default="dist" basedir=".">
+    <property name="project" value="jacuzzi" />
+    <property name="version" value="-0.0" />
+    
+    <property name="codeDir" value="code" />
+    <property name="depsDir" value="deps" />
+    <property name="distDir" value="dist" />
+    <property name="docsDir" value="docs" />
+    <property name="srcDir" value="${codeDir}/src" />
+    <property name="binDir" value="${codeDir}/bin" />
+
+    <property name="debug" value="on" />
+    <property name="verbose" value="yes" />
+
+    <property name="jar" value="${distDir}/${project}${version}.jar"/>
+    <property name="deps" value="${depsDir}/c3p0-0.9.1.2.jar;${depsDir}/cglib-nodep-2.2.jar;${depsDir}/mysql-connector-java-5.1.6-bin.jar"/>
+
+    <target name="compile">
+        <mkdir dir="${binDir}"/>
+        <javac srcdir="${srcDir}" destdir="${binDir}" classpath=".;${srcDir};${binDir};${deps}" debug="${debug}" verbose="${verbose}"/>
+    </target>
+
+    <target name="dist" depends="compile">
+        <jar destfile="${jar}">
+                <fileset dir="${binDir}">
+                       <include name="**/*.*"/>
+                </fileset>
+                <fileset dir="${srcDir}">
+                       <include name="**/*.*"/>
+                </fileset>
+        </jar>    
+    </target>
+
+
+    <target name="clean">
+        <delete dir="${binDir}"/>
+        <delete file="${jar}"/>
+    </target>
+</project>
