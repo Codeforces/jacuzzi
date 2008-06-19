@@ -9,15 +9,140 @@ It is very easy to use jacuzzi. You don't need to spend a lot of time to learn h
 
 This is the sample code how to create and use jacuzzi DAOs:
 {{{
-    public static void main(String[] args) throws SQLException {
-        Connection connection = getConnectionUsingYourApplicationSpecificMethod();
+        // We are recommending to use c3p0
+        DataSource source = getDataSourceUsingApplicationSpecificMethod();
+
+        // Get jucuzzi instance, it will create it or get from cache
+        Jacuzzi jacuzzi = Jacuzzi.getJacuzzi(source);
         
-        UserDao userDao = new UserDao(connection);
+        // Create or get from cache DAOs
+        UserDao userDao = jacuzzi.getDao(UserDao.class);
+        EventDao eventDao = jacuzzi.getDao(EventDao.class);
+        GroupDao groupDao = jacuzzi.getDao(GroupDao.class);
+
+        // Get user by primary key
+        User mike = userDao.find(1L);
         
-        User user = userDao.findById(1);
-        user.setName("Administrator");
-        userDao.save(user);
+        // Write your own methods in DAO to extend basic functionality
+        List<User> mikeFriends = userDao.findFriends(mike);
+
+        // Another example, some kind of mapping
+        Group mikeGroup = userDao.findGroup(mike);
         
-        connection.close();
-    }
+        // User attached to event with id == 1
+        User user = userDao.findByEvent(eventDao.find(1L));
 }}}
+
+= How to create DAO =
+It is very easy too. Just extend GenericDaoImpl<?,?> and your DAO is ready. It this example we created DAO for entity ForumPost and primary key (id) of type String.
+{{{
+public class ForumPostDao extends GenericDaoImpl<ForumPost, String> {
+    protected ForumPostDao(DataSource source) {
+        super(source);
+    }
+}
+}}}
+
+Below there are more interesting examples of the DAOs.
+{{{
+public class EventDao extends GenericDaoImpl<Event, Long> {
+    protected EventDao(DataSource source) {
+        super(source);
+    }
+
+    public User getUser(Event event) {
+        return getJacuzzi().getDao(UserDao.class).findByEvent(event);
+    }
+}
+
+public class GroupDao extends GenericDaoImpl<Group, Long> {
+    protected GroupDao(DataSource source) {
+        super(source);
+    }
+
+    public Group findByUser(User user) {
+        try {
+            return convertFromRow(getJacuzzi().findFirstRow("SELECT `Group`.* " +
+                    "FROM `Group`, `User` " +
+                    "WHERE `Group`.id = `User`.groupId AND `User`.id = ?",
+                    user.getId())
+            );
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+}
+
+public class UserDao extends GenericDaoImpl<User, Long> {
+    protected UserDao(DataSource source) {
+        super(source);
+    }
+
+    public Group findGroup(User user) {
+        return getJacuzzi().getDao(GroupDao.class).findByUser(user);
+    }
+
+    public List<User> findFriends(User user) {
+        long id = user.getId();
+        try {
+            return convertFromRows(
+                    getJacuzzi().findRows("SELECT User.* FROM User, Friend " +
+                            "WHERE " +
+                            "(User.id = Friend.second AND Friend.first = ?) " +
+                            "OR " +
+                            "(User.id = Friend.first AND Friend.second = ?) " +
+                            "GROUP BY User.id",
+                            id, id
+                    )
+            );
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public User findByEvent(Event event) {
+        try {
+            return convertFromRow(getJacuzzi().findFirstRow("SELECT User.* " +
+                    "FROM User, Event " +
+                    "WHERE User.id = Event.userId AND Event.id = ?",
+                    event.getId())
+            );
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+}
+}}}
+
+= Mapping =
+In the simplest case all you need is to mark one field with @Id in your entity class. Currently, composite primary keys are not supported.
+{{{
+public class User {
+    @Id
+    private long id;
+    
+    private String name;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+}}}
+
+You can use @MappedTo annotation to specify table name (if you annotated class) or column name (if you annotated field).
+
+Also it is possible to use @Transient for classes or fields to specify the fact that class (field) not mapped. Usually @Transient used for some superclasses.
+
+Your entities should have getter and setter (not necessary public) for mapped fields.
