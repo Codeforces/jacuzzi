@@ -61,15 +61,11 @@ public class GroupDao extends GenericDaoImpl<Group, Long> {
     }
 
     public Group findByUser(User user) {
-        try {
-            return convertFromRow(getJacuzzi().findFirstRow("SELECT `Group`.* " +
-                    "FROM `Group`, `User` " +
-                    "WHERE `Group`.id = `User`.groupId AND `User`.id = ?",
-                    user.getId())
-            );
-        } catch (SQLException e) {
-            throw new IllegalStateException(e);
-        }
+        return convertFromRow(getJacuzzi().findFirstRow("SELECT `Group`.* " +
+                "FROM `Group`, `User` " +
+                "WHERE `Group`.id = `User`.groupId AND `User`.id = ?",
+                user.getId())
+        );
     }
 }
 
@@ -84,32 +80,24 @@ public class UserDao extends GenericDaoImpl<User, Long> {
 
     public List<User> findFriends(User user) {
         long id = user.getId();
-        try {
-            return convertFromRows(
-                    getJacuzzi().findRows("SELECT User.* FROM User, Friend " +
-                            "WHERE " +
-                            "(User.id = Friend.second AND Friend.first = ?) " +
-                            "OR " +
-                            "(User.id = Friend.first AND Friend.second = ?) " +
-                            "GROUP BY User.id",
-                            id, id
-                    )
-            );
-        } catch (SQLException e) {
-            throw new IllegalStateException(e);
-        }
+        return convertFromRows(
+                getJacuzzi().findRows("SELECT User.* FROM User, Friend " +
+                        "WHERE " +
+                        "(User.id = Friend.second AND Friend.first = ?) " +
+                        "OR " +
+                        "(User.id = Friend.first AND Friend.second = ?) " +
+                        "GROUP BY User.id",
+                        id, id
+                )
+        );
     }
 
     public User findByEvent(Event event) {
-        try {
-            return convertFromRow(getJacuzzi().findFirstRow("SELECT User.* " +
-                    "FROM User, Event " +
-                    "WHERE User.id = Event.userId AND Event.id = ?",
-                    event.getId())
-            );
-        } catch (SQLException e) {
-            throw new IllegalStateException(e);
-        }
+        return convertFromRow(getJacuzzi().findFirstRow("SELECT User.* " +
+                "FROM User, Event " +
+                "WHERE User.id = Event.userId AND Event.id = ?",
+                event.getId())
+        );
     }
 }
 }}}
