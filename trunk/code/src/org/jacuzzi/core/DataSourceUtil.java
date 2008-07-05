@@ -4,11 +4,17 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-/**
- * @author: Mike Mirzayanov
- */
+/** @author: Mike Mirzayanov */
 class DataSourceUtil {
-    public static Connection getConnection(DataSource source) throws SQLException {
-        return source.getConnection();
+    /**
+     * @param source DataSource instance.
+     * @return Connection Connection from the source.
+     */
+    public static Connection getConnection(DataSource source) {
+        try {
+            return source.getConnection();
+        } catch (SQLException e) {
+            throw new DatabaseException(e);
+        }
     }
 }

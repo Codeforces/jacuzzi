@@ -11,7 +11,7 @@ import java.util.*;
 /**
  * @author: Mike Mirzayanov
  */
-public class TypeOracleImpl<T> extends TypeOracle<T> {
+class TypeOracleImpl<T> extends TypeOracle<T> {
     private FastClass fastClazz;
     private Class<T> clazz;
     private List<Field> fields;

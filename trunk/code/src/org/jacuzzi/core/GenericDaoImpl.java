@@ -4,12 +4,9 @@ import javax.sql.DataSource;
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import java.util.ArrayList;
-import java.sql.SQLException;
 
-/**
- * @author: Mike Mirzayanov
- */
-public class GenericDaoImpl<T,K> implements GenericDao<T,K> {
+/** @author: Mike Mirzayanov */
+public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
     private Jacuzzi jacuzzi;
     private TypeOracle<T> typeOracle;
     private Class<T> typeClass;
@@ -45,7 +42,7 @@ public class GenericDaoImpl<T,K> implements GenericDao<T,K> {
         return findBy("1");
     }
 
-    public List<T> findBy(String query, Object ... args) {
+    public List<T> findBy(String query, Object... args) {
         if (!query.toUpperCase().startsWith("SELECT ")) {
             if (!query.toUpperCase().startsWith("WHERE ")) {
                 query = "WHERE " + query;
@@ -55,20 +52,14 @@ public class GenericDaoImpl<T,K> implements GenericDao<T,K> {
             query = Query.format("SELECT ?t.* FROM ?t ", table, table) + query;
         }
 
-        try {
-            List<Row> rows = jacuzzi.findRows(query, args);
+        List<Row> rows = jacuzzi.findRows(query, args);
 
-            List<T> result = convertFromRows(rows);
-
-            return result;
-        } catch (SQLException e) {
-            throw new IllegalStateException(e);
-        }
+        return convertFromRows(rows);
     }
 
     protected List<T> convertFromRows(List<Row> rows) {
         List<T> result = new ArrayList<T>(rows.size());
-        for (Row row: rows) {
+        for (Row row : rows) {
             result.add(convertFromRow(row));
         }
         return result;
@@ -79,38 +70,27 @@ public class GenericDaoImpl<T,K> implements GenericDao<T,K> {
     }
 
     public void save(T object) {
-        try {
-            Long count = (Long) jacuzzi.findOne(Query.format("SELECT COUNT(*) FROM ?t WHERE ?f = ?",
-                    typeOracle.getTableName(), typeOracle.getIdColumn()), typeOracle.getIdValue(object));
+        Long count = (Long) jacuzzi.findOne(Query.format("SELECT COUNT(*) FROM ?t WHERE ?f = ?",
+                typeOracle.getTableName(), typeOracle.getIdColumn()), typeOracle.getIdValue(object));
 
-            if (count == 0) {
-                insert(object);
-                return;
-            }
-
-            if (count == 1) {
-                update(object);
-                return;
-            }
-
-            throw new MappingException("There are more than one instance of " +
-                    typeClass + " with id = " + typeOracle.getIdValue(object) + ".");
-
-        } catch (SQLException e) {
-            throw new IllegalStateException(e);
+        if (count == 0) {
+            insert(object);
+            return;
         }
+
+        if (count == 1) {
+            update(object);
+            return;
+        }
+
+        throw new MappingException("There are more than one instance of " +
+                typeClass + " with id = " + typeOracle.getIdValue(object) + ".");
     }
 
     public boolean insert(T object) {
         StringBuffer query = new StringBuffer(Query.format("INSERT INTO ?t ", typeOracle.getTableName()));
         query.append(typeOracle.getQuerySetSql());
-
-        try {
-            int count = jacuzzi.execute(query.toString(), typeOracle.getQuerySetArguments(object));
-            return count == 1;
-        } catch (SQLException e) {
-            throw new IllegalStateException(e);
-        }
+        return 1 == jacuzzi.execute(query.toString(), typeOracle.getQuerySetArguments(object));
     }
 
     public boolean update(T object) {
@@ -118,17 +98,12 @@ public class GenericDaoImpl<T,K> implements GenericDao<T,K> {
         query.append(typeOracle.getQuerySetSql());
         query.append(Query.format(" WHERE ?f = ?", typeOracle.getIdColumn()));
 
-        try {
-            Object[] setArguments = typeOracle.getQuerySetArguments(object);
-            Object[] arguments = new Object[setArguments.length + 1];
-            System.arraycopy(setArguments, 0, arguments, 0, setArguments.length);
-            arguments[arguments.length - 1] = typeOracle.getIdValue(object);
+        Object[] setArguments = typeOracle.getQuerySetArguments(object);
+        Object[] arguments = new Object[setArguments.length + 1];
+        System.arraycopy(setArguments, 0, arguments, 0, setArguments.length);
+        arguments[arguments.length - 1] = typeOracle.getIdValue(object);
 
-            int count = jacuzzi.execute(query.toString(), arguments);
-            return count == 1;
-        } catch (SQLException e) {
-            throw new IllegalStateException(e);
-        }
+        return 1 == jacuzzi.execute(query.toString(), arguments);
     }
 
     public T newInstance() {
@@ -137,7 +112,7 @@ public class GenericDaoImpl<T,K> implements GenericDao<T,K> {
 
     protected synchronized Class<T> getTypeClass() {
         if (typeClass == null) {
-            ParameterizedType type = (ParameterizedType)this.getClass().getGenericSuperclass();
+            ParameterizedType type = (ParameterizedType) this.getClass().getGenericSuperclass();
             typeClass = (Class<T>) type.getActualTypeArguments()[0];
         }
 
@@ -146,7 +121,7 @@ public class GenericDaoImpl<T,K> implements GenericDao<T,K> {
 
     protected synchronized Class<K> getKeyClass() {
         if (keyClass == null) {
-            ParameterizedType type = (ParameterizedType)this.getClass().getGenericSuperclass();
+            ParameterizedType type = (ParameterizedType) this.getClass().getGenericSuperclass();
             keyClass = (Class<K>) type.getActualTypeArguments()[1];
         }
 

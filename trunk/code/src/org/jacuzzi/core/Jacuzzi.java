@@ -2,11 +2,11 @@ package org.jacuzzi.core;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Constructor;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.sql.SQLException;
 
 /** @author: Mike Mirzayanov */
 public class Jacuzzi {
@@ -17,7 +17,8 @@ public class Jacuzzi {
      */
     private final DataSource dataSource;
 
-    private final Map<Class<?>, GenericDao<?,?>> daoCache = new HashMap<Class<?>, GenericDao<?,?>>();
+    /** For each entity class there is correspondent DAO. */
+    private final Map<Class<?>, GenericDao<?, ?>> daoCache = new HashMap<Class<?>, GenericDao<?, ?>>();
 
     /**
      * Creates jacuzzi instance by {@code DataSource}.
@@ -35,11 +36,14 @@ public class Jacuzzi {
      * @param query Raw SQL query.
      * @param args  Arguments to replace "?" jokers in {@code query}.
      * @return The number of affected rows.
-     * @throws SQLException In case of can't execute query.
      */
-    public int execute(String query, Object... args) throws SQLException {
+    public int execute(String query, Object... args) {
         synchronized (dataSource) {
-            return PreparedStatementUtil.execute(dataSource, query, args);
+            try {
+                return PreparedStatementUtil.execute(dataSource, query, args);
+            } catch (SQLException e) {
+                throw new DatabaseException(e);
+            }
         }
     }
 
@@ -50,11 +54,14 @@ public class Jacuzzi {
      * @param query Raw SQL query.
      * @param args  Arguments to replace "?" jokers in {@code query}.
      * @return Selected rows.
-     * @throws SQLException In case of can't execute query.
      */
-    public List<Row> findRows(String query, Object... args) throws SQLException {
+    public List<Row> findRows(String query, Object... args) {
         synchronized (dataSource) {
-            return PreparedStatementUtil.findRows(dataSource, query, args);
+            try {
+                return PreparedStatementUtil.findRows(dataSource, query, args);
+            } catch (SQLException e) {
+                throw new DatabaseException(e);
+            }
         }
     }
 
@@ -65,11 +72,14 @@ public class Jacuzzi {
      * @param query Raw SQL query.
      * @param args  Arguments to replace "?" jokers in {@code query}.
      * @return The first selected row.
-     * @throws SQLException In case of can't execute query.
      */
-    public Row findFirstRow(String query, Object... args) throws SQLException {
+    public Row findFirstRow(String query, Object... args) {
         synchronized (dataSource) {
-            return PreparedStatementUtil.findFirstRow(dataSource, query, args);
+            try {
+                return PreparedStatementUtil.findFirstRow(dataSource, query, args);
+            } catch (SQLException e) {
+                throw new DatabaseException(e);
+            }
         }
     }
 
@@ -80,11 +90,14 @@ public class Jacuzzi {
      * @param query Raw SQL query.
      * @param args  Arguments to replace "?" jokers in {@code query}.
      * @return The only value in the only row.
-     * @throws SQLException In case of can't execute query.
      */
-    public Object findOne(String query, Object... args) throws SQLException {
+    public Object findOne(String query, Object... args) {
         synchronized (dataSource) {
-            return PreparedStatementUtil.findOne(dataSource, query, args);
+            try {
+                return PreparedStatementUtil.findOne(dataSource, query, args);
+            } catch (SQLException e) {
+                throw new DatabaseException(e);
+            }
         }
     }
 
@@ -95,9 +108,8 @@ public class Jacuzzi {
      * @param query Raw SQL query.
      * @param args  Arguments to replace "?" jokers in {@code query}.
      * @return The only value in the only row as long.
-     * @throws SQLException In case of can't execute query.
      */
-    public long findLong(String query, Object... args) throws SQLException {
+    public long findLong(String query, Object... args) {
         return (Long) findOne(query, args);
     }
 
@@ -108,9 +120,8 @@ public class Jacuzzi {
      * @param query Raw SQL query.
      * @param args  Arguments to replace "?" jokers in {@code query}.
      * @return The only value in the only row as {@code String}.
-     * @throws SQLException In case of can't execute query.
      */
-    public String findString(String query, Object... args) throws SQLException {
+    public String findString(String query, Object... args) {
         return (String) findOne(query, args);
     }
 
@@ -121,13 +132,19 @@ public class Jacuzzi {
      * @param query Raw SQL query.
      * @param args  Arguments to replace "?" jokers in {@code query}.
      * @return The only value in the only row as {@code Date}.
-     * @throws SQLException In case of can't execute query.
      */
-    public Date findDate(String query, Object... args) throws SQLException {
+    public Date findDate(String query, Object... args) {
         return (Date) findOne(query, args);
     }
 
-    public <T extends GenericDao<?,?>> T getDao(Class<T> daoClazz) {
+    /**
+     * Returns DAO instance by given DAO class.
+     * Gets it from the cache or creates if needed.
+     *
+     * @param daoClazz of type Class<T> Class<? extends GenericDao<?,?>> instance.
+     * @return T DAO instance.
+     */
+    public <T extends GenericDao<?, ?>> T getDao(Class<T> daoClazz) {
         synchronized (daoCache) {
             if (daoCache.containsKey(daoClazz)) {
                 return (T) daoCache.get(daoClazz);
@@ -135,7 +152,7 @@ public class Jacuzzi {
                 try {
                     Constructor constructor = daoClazz.getDeclaredConstructor(DataSource.class);
                     constructor.setAccessible(true);
-                    GenericDao<?,?> dao = (GenericDao<?,?>) constructor.newInstance(dataSource);
+                    GenericDao<?, ?> dao = (GenericDao<?, ?>) constructor.newInstance(dataSource);
                     daoCache.put(daoClazz, dao);
                     return (T) dao;
                 } catch (Exception e) {
@@ -149,6 +166,9 @@ public class Jacuzzi {
 
     /** Thread local cache. */
     private static final ThreadLocal<Map<DataSource, Jacuzzi>> threadCache = new ThreadLocal<Map<DataSource, Jacuzzi>>() {
+        /**
+         * @return Map<DataSource, Jacuzzi> Creates empty map.
+         */
         protected Map<DataSource, Jacuzzi> initialValue() {
             return new HashMap<DataSource, Jacuzzi>();
         }

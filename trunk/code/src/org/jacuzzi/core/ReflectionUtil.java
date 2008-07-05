@@ -1,6 +1,5 @@
 package org.jacuzzi.core;
 
-import example.model.User;
 import net.sf.cglib.reflect.FastClass;
 import net.sf.cglib.reflect.FastMethod;
 import org.jacuzzi.mapping.Transient;
@@ -238,22 +237,5 @@ class ReflectionUtil {
         public boolean isTransientAnnotated() {
             return transientAnnotated;
         }
-    }
-
-    public static void main(String[] args) {
-        long start = System.currentTimeMillis();
-        Class<?> clazz = User.class;
-
-        String field = "name";
-
-        System.out.println(findGetter(clazz, field));
-        System.out.println(findSetter(clazz, field));
-        String[] fields = findFields(clazz);
-        for (String fieldx : fields) {
-            System.err.println(fieldx);
-
-        }
-
-        System.out.println(System.currentTimeMillis() - start);
     }
 }
