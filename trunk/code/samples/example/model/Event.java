@@ -2,7 +2,7 @@ package example.model;
 
 import org.jacuzzi.mapping.Id;
 
-/** @author: Mike Mirzayanov */
+/** @author Mike Mirzayanov */
 public class Event {
     @Id
     private long id;

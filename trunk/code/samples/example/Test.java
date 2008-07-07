@@ -3,16 +3,30 @@ package example;
 import example.dao.EventDao;
 import example.dao.GroupDao;
 import example.dao.UserDao;
+import example.dao.Event2Dao;
 import example.model.Group;
 import example.model.User;
+import example.model.Event;
+import example.model.Event2;
 import org.jacuzzi.core.Jacuzzi;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.Date;
 
 /** @author: Mike Mirzayanov */
 public class Test {
     public static void main(DataSource source) {
+        Event2Dao eventDao = new Event2Dao(source);
+
+        Event2 event = new Event2();
+        event.setTitle("This is sample:)");
+        event.setCreationTime(new Date());
+
+        eventDao.save(event);
+    }
+
+    public static void main2(DataSource source) {
         Jacuzzi jacuzzi = Jacuzzi.getJacuzzi(source);
         UserDao userDao = jacuzzi.getDao(UserDao.class);
         EventDao eventDao = jacuzzi.getDao(EventDao.class);

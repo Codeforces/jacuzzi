@@ -5,7 +5,7 @@ package org.jacuzzi.core;
  * I believe that database invalid state or behavor is
  * runtime exception.
  *
- * @author: Mike Mirzayanov
+ * @author Mike Mirzayanov
  */
 public class DatabaseException extends RuntimeException {
     /** @param message Exception message. */

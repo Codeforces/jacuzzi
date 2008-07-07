@@ -8,7 +8,7 @@ import javax.sql.DataSource;
 
 /** @author: Mike Mirzayanov */
 public class EventDao extends GenericDaoImpl<Event, Long> {
-    protected EventDao(DataSource source) {
+    public EventDao(DataSource source) {
         super(source);
     }
 

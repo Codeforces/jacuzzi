@@ -4,7 +4,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-/** @author: Mike Mirzayanov */
+/** @author Mike Mirzayanov */
 class DataSourceUtil {
     /**
      * @param source DataSource instance.

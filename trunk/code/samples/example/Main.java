@@ -14,19 +14,19 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * @author: Mike Mirzayanov
+ * @author Mike Mirzayanov
  */
 public class Main {
     public static String URL = "jdbc:mysql://localhost:3307/velocity";
     public static String USER = "root";
-    public static String PASSWORD = "???";
+    public static String PASSWORD = "tco99708";
 
     public static void main(String[] args) throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException, InterruptedException {
         Class.forName("com.mysql.jdbc.Driver");
         DataSource source = createC3p0();
 
         long start = System.currentTimeMillis();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10000; i++) {
             Test.main(source);
         }
         System.out.println((System.currentTimeMillis() - start) + " ms.");

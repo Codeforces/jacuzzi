@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * @author: Mike Mirzayanov
+ * @author Mike Mirzayanov
  */
 class ReflectionUtil {
     static FastMethod findGetter(Class<?> clazz, String field) {

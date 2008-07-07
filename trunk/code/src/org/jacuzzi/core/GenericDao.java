@@ -14,7 +14,7 @@ import java.util.List;
  * }
  * </code>
  *
- * @author: Mike Mirzayanov
+ * @author Mike Mirzayanov
  */
 public interface GenericDao<T, K> {
     /**

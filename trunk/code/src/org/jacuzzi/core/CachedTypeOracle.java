@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 /**
- * @author: Mike Mirzayanov
+ * @author Mike Mirzayanov
  */
 class CachedTypeOracle<T> extends TypeOracle<T> {
     private static ThreadLocal<Map<Class<?>, CachedTypeOracle<?>>> threadLocalCache = new ThreadLocal<Map<Class<?>, CachedTypeOracle<?>>>() {

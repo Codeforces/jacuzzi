@@ -7,7 +7,7 @@ import org.jacuzzi.core.GenericDaoImpl;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 
-/** @author: Mike Mirzayanov */
+/** @author Mike Mirzayanov */
 public class GroupDao extends GenericDaoImpl<Group, Long> {
     protected GroupDao(DataSource source) {
         super(source);

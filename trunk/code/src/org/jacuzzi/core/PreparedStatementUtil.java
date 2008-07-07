@@ -4,10 +4,10 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.List;
 
-/** @author: Mike Mirzayanov */
+/** @author Mike Mirzayanov */
 class PreparedStatementUtil {
     static List<Row> findRows(DataSource dataSource, String query, Object... args) throws SQLException {
-        System.out.println(query);
+        //System.out.println(query);
 
         Connection connection = DataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
@@ -27,7 +27,7 @@ class PreparedStatementUtil {
     }
 
     public static int execute(DataSource dataSource, String query, Object[] args) throws SQLException {
-        System.out.println(query);
+        //System.out.println(query);
 
         Connection connection = DataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
@@ -54,7 +54,7 @@ class PreparedStatementUtil {
     }
 
     public static Row findFirstRow(DataSource dataSource, String query, Object[] args) throws SQLException {
-        System.out.println(query);
+        //System.out.println(query);
 
         Connection connection = DataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
@@ -74,7 +74,7 @@ class PreparedStatementUtil {
     }
 
     public static Object findOne(DataSource dataSource, String query, Object[] args) throws SQLException {
-        System.out.println(query);
+        //System.out.println(query);
 
         Connection connection = DataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;

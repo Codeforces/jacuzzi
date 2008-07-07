@@ -1,7 +1,7 @@
 package org.jacuzzi.core;
 
 /**
- * @author: Mike Mirzayanov
+ * @author Mike Mirzayanov
  */
 class Query {
     /**

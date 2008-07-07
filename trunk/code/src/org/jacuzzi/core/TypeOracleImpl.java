@@ -21,6 +21,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
 
     private void ensureMapping() {
         if (fields == null) {
+            System.out.println("ensureMapping");
             fields = new ArrayList<Field>();
             fieldsByColumns = new HashMap<String, Field>();
             fastClazz = FastClass.create(clazz);
@@ -69,6 +70,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
     }
 
     TypeOracleImpl(Class<T> clazz) {
+        System.out.println("TypeOracleImpl created!");
         this.clazz = clazz;
     }
 

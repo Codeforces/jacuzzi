@@ -1,7 +1,7 @@
 package org.jacuzzi.core;
 
 /**
- * @author: Mike Mirzayanov
+ * @author Mike Mirzayanov
  */
 public class MappingException extends RuntimeException {
     public MappingException(String message) {

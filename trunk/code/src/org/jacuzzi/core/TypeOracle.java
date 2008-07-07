@@ -3,7 +3,7 @@ package org.jacuzzi.core;
 import java.util.Map;
 
 /**
- * @author: Mike Mirzayanov
+ * @author Mike Mirzayanov
  */
 public abstract class TypeOracle<T> {
     public abstract String getIdColumn();
@@ -26,6 +26,7 @@ public abstract class TypeOracle<T> {
         if (cache.containsKey(typeClass)) {
             return (CachedTypeOracle<T>) cache.get(typeClass);
         } else {
+            System.out.println("TypeOracle created!");
             TypeOracle<T> typeOracle = new CachedTypeOracle<T>(typeClass);
             cache.put(typeClass, new CachedTypeOracle<T>(typeClass));
             return typeOracle;
