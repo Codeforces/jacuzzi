@@ -18,7 +18,7 @@
 
     <target name="svn">
         <exec executable="svn" output="revision.xml">
-            <arg line="info --xml"/>
+            <arg line="info build.xml --xml"/>
         </exec>
         <xmlproperty file="revision.xml" collapseattributes="true"/>
         <property name="svn.revision" value="${info.entry.revision}"/>
