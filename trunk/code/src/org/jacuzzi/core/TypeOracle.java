@@ -27,8 +27,8 @@ public abstract class TypeOracle<T> {
             return (CachedTypeOracle<T>) cache.get(typeClass);
         } else {
             System.out.println("TypeOracle created!");
-            TypeOracle<T> typeOracle = new CachedTypeOracle<T>(typeClass);
-            cache.put(typeClass, new CachedTypeOracle<T>(typeClass));
+            CachedTypeOracle<T> typeOracle = new CachedTypeOracle<T>(typeClass);
+            cache.put(typeClass, typeOracle);
             return typeOracle;
         }
     }
