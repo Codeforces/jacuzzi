@@ -5,7 +5,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import java.util.ArrayList;
 
-/** @author: Mike Mirzayanov */
+/** @author Mike Mirzayanov */
 public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
     private Jacuzzi jacuzzi;
     private TypeOracle<T> typeOracle;
@@ -94,17 +94,23 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
     }
 
     public void save(T object) {
-        Long count = (Long) jacuzzi.findOne(Query.format("SELECT COUNT(*) FROM ?t WHERE ?f = ?",
-                typeOracle.getTableName(), typeOracle.getIdColumn()), typeOracle.getIdValue(object));
+        beginTransaction();
 
-        if (count == 0) {
-            insert(object);
-            return;
-        }
+        try {
+            Long count = (Long) jacuzzi.findOne(Query.format("SELECT COUNT(*) FROM ?t WHERE ?f = ?",
+                    typeOracle.getTableName(), typeOracle.getIdColumn()), typeOracle.getIdValue(object));
 
-        if (count == 1) {
-            update(object);
-            return;
+            if (count == 0) {
+                insert(object);
+                return;
+            }
+
+            if (count == 1) {
+                update(object);
+                return;
+            }
+        } finally {
+            commit();
         }
 
         throw new MappingException("There are more than one instance of " +

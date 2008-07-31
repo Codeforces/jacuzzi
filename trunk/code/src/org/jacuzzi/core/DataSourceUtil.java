@@ -72,7 +72,7 @@ class DataSourceUtil {
         if (connectionsByThread.containsKey(currentThread)) {
             long leaseTime = leasesByThread.get(currentThread);
 
-            if (leaseTime > System.currentTimeMillis()) {
+            if (leaseTime < System.currentTimeMillis()) {
                 throw new DatabaseException("It seems you've didn't call detachConnection().");
             }
 

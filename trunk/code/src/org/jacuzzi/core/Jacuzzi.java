@@ -36,17 +36,32 @@ public class Jacuzzi {
      * <p/>
      * You should call commit() or rollback() at
      * the end of transaction.
+     *
+     * @param isolationLevel Transaction isolation level
+     *                       (use Connection constants).
      */
-    public void beginTransaction() {
+    public void beginTransaction(int isolationLevel) {
         DataSourceUtil.attachConnection();
 
         Connection connection = DataSourceUtil.getConnection(dataSource);
 
         try {
+            connection.setTransactionIsolation(isolationLevel);
             connection.setAutoCommit(false);
         } catch (SQLException e) {
             throw new DatabaseException("Engine doesn't support transactions or connection is closed.");
         }
+    }
+
+    /**
+     * Call it to begin transaction around
+     * current connection in current thread.
+     * <p/>
+     * You should call commit() or rollback() at
+     * the end of transaction.
+     */
+    public void beginTransaction() {
+        beginTransaction(Connection.TRANSACTION_SERIALIZABLE);
     }
 
     /** Commits current transaction. */
