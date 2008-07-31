@@ -49,7 +49,7 @@ public class Jacuzzi {
             connection.setTransactionIsolation(isolationLevel);
             connection.setAutoCommit(false);
         } catch (SQLException e) {
-            throw new DatabaseException("Engine doesn't support transactions or connection is closed.");
+            throw new DatabaseException("Engine doesn't support transactions or connection is closed.", e);
         }
     }
 
@@ -70,10 +70,10 @@ public class Jacuzzi {
 
         try {
             connection.commit();
-            DataSourceUtil.detachConnection();
             connection.setAutoCommit(true);
+            DataSourceUtil.detachConnection();
         } catch (SQLException e) {
-            throw new DatabaseException("Engine doesn't support transactions or connection is closed.");
+            throw new DatabaseException("Engine doesn't support transactions or connection is closed.", e);
         }
     }
 
@@ -83,8 +83,8 @@ public class Jacuzzi {
 
         try {
             connection.rollback();
-            DataSourceUtil.detachConnection();
             connection.setAutoCommit(true);
+            DataSourceUtil.detachConnection();
         } catch (SQLException e) {
             throw new DatabaseException("Engine doesn't support transactions or connection is closed.");
         }

@@ -5,6 +5,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 
 /** @author Mike Mirzayanov */
 class DataSourceUtil {
@@ -22,9 +24,10 @@ class DataSourceUtil {
     private static final Map<Thread, Long> leasesByThread
             = new HashMap<Thread, Long>();
 
-    /**
-     * Time in milliseconds for lease.
-     */
+    /** The set of attached connections. */
+    private static final Set<Connection> attachedConnections = new HashSet<Connection>();
+
+    /** Time in milliseconds for lease. */
     private static final int LEASE_TIMEOUT = 30000;
 
     /**
@@ -58,8 +61,13 @@ class DataSourceUtil {
     public static synchronized void detachConnection() {
         Thread currentThread = Thread.currentThread();
 
+        Connection connection = connectionsByThread.get(currentThread);
+
+        attachedConnections.remove(connection);
         connectionsByThread.remove(currentThread);
         leasesByThread.remove(currentThread);
+
+        closeConnection(connection);
     }
 
     /**
@@ -86,6 +94,7 @@ class DataSourceUtil {
             Connection connection = source.getConnection();
 
             if (connectionsByThread.containsKey(currentThread)) {
+                attachedConnections.add(connection);
                 connectionsByThread.put(currentThread, connection);
             }
 
@@ -107,5 +116,15 @@ class DataSourceUtil {
         }
 
         return getConnection(source);
+    }
+
+    public static synchronized void closeConnection(Connection connection) {
+        try {
+            if (connection != null && !attachedConnections.contains(connection)) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            throw new DatabaseException("Can't close connection.", e);
+        }
     }
 }

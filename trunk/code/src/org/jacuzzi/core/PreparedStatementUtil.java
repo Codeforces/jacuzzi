@@ -22,7 +22,7 @@ class PreparedStatementUtil {
             return Row.readFromResultSet(resultSet);
         } finally {
             tryCloseStatement(statement);
-            connection.close();
+            tryCloseConnection(connection);
         }
     }
 
@@ -42,7 +42,7 @@ class PreparedStatementUtil {
             }
         } finally {
             tryCloseStatement(statement);
-            connection.close();
+            tryCloseConnection(connection);
         }
     }
 
@@ -62,7 +62,7 @@ class PreparedStatementUtil {
             return Row.readFirstFromResultSet(resultSet);
         } finally {
             tryCloseStatement(statement);
-            connection.close();
+            tryCloseConnection(connection);
         }
     }
 
@@ -102,8 +102,12 @@ class PreparedStatementUtil {
             return result;
         } finally {
             tryCloseStatement(statement);
-            connection.close();
+            tryCloseConnection(connection);
         }
+    }
+
+    private static void tryCloseConnection(Connection connection) {
+        DataSourceUtil.closeConnection(connection);
     }
 
     private static void tryCloseStatement(Statement statement) {
@@ -111,7 +115,7 @@ class PreparedStatementUtil {
             try {
                 statement.close();
             } catch (SQLException e) {
-                e.printStackTrace();
+                throw new DatabaseException("Can't close statement.", e);
             }
         }
     }
