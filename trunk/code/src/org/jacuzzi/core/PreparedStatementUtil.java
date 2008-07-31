@@ -38,16 +38,9 @@ class PreparedStatementUtil {
                 setupPreparedStatementParameters(statement, args);
                 return statement.executeUpdate();
             } catch (Throwable e) {
-                if (!connection.getAutoCommit()) {
-                    connection.rollback();
-                }
                 throw new SQLException(e);
             }
         } finally {
-            if (!connection.getAutoCommit()) {
-                connection.commit();
-            }
-
             tryCloseStatement(statement);
             connection.close();
         }

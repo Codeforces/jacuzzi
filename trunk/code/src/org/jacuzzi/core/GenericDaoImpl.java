@@ -21,6 +21,30 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         typeOracle = TypeOracle.getTypeOracle(getTypeClass());
     }
 
+    /**
+     * Call it to begin transaction around
+     * current connection in current thread.
+     * <p/>
+     * You should call commit() or rollback() at
+     * the end of transaction.
+     * <p/>
+     * Usually you should call commit or rollback
+     * in the current DAO method.
+     */
+    protected void beginTransaction() {
+        getJacuzzi().beginTransaction();
+    }
+
+    /** Commits current transaction. */
+    protected void commit() {
+        getJacuzzi().commit();
+    }
+
+    /** Rollbacks current transaction. */
+    protected void rollback() {
+        getJacuzzi().rollback();
+    }
+
     public T find(K id) {
         String idColumn = typeOracle.getIdColumn();
 

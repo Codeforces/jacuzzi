@@ -7,8 +7,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.sql.SQLException;
+import java.sql.Connection;
 
-/** @author: Mike Mirzayanov */
+/** @author Mike Mirzayanov */
 public class Jacuzzi {
     /**
      * {@code DataSource} instance,
@@ -27,6 +28,51 @@ public class Jacuzzi {
      */
     protected Jacuzzi(DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    /**
+     * Call it to begin transaction around
+     * current connection in current thread.
+     * <p/>
+     * You should call commit() or rollback() at
+     * the end of transaction.
+     */
+    public void beginTransaction() {
+        DataSourceUtil.attachConnection();
+
+        Connection connection = DataSourceUtil.getConnection(dataSource);
+
+        try {
+            connection.setAutoCommit(false);
+        } catch (SQLException e) {
+            throw new DatabaseException("Engine doesn't support transactions or connection is closed.");
+        }
+    }
+
+    /** Commits current transaction. */
+    public void commit() {
+        Connection connection = DataSourceUtil.getAttachedConnection(dataSource);
+
+        try {
+            connection.commit();
+            DataSourceUtil.detachConnection();
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new DatabaseException("Engine doesn't support transactions or connection is closed.");
+        }
+    }
+
+    /** Rollbacks current transaction. */
+    public void rollback() {
+        Connection connection = DataSourceUtil.getAttachedConnection(dataSource);
+
+        try {
+            connection.rollback();
+            DataSourceUtil.detachConnection();
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new DatabaseException("Engine doesn't support transactions or connection is closed.");
+        }
     }
 
     /**
