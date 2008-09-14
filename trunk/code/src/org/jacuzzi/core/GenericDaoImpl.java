@@ -94,23 +94,17 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
     }
 
     public void save(T object) {
-        beginTransaction();
+        Long count = (Long) jacuzzi.findOne(Query.format("SELECT COUNT(*) FROM ?t WHERE ?f = ?",
+                typeOracle.getTableName(), typeOracle.getIdColumn()), typeOracle.getIdValue(object));
 
-        try {
-            Long count = (Long) jacuzzi.findOne(Query.format("SELECT COUNT(*) FROM ?t WHERE ?f = ?",
-                    typeOracle.getTableName(), typeOracle.getIdColumn()), typeOracle.getIdValue(object));
+        if (count == 0) {
+            insert(object);
+            return;
+        }
 
-            if (count == 0) {
-                insert(object);
-                return;
-            }
-
-            if (count == 1) {
-                update(object);
-                return;
-            }
-        } finally {
-            commit();
+        if (count == 1) {
+            update(object);
+            return;
         }
 
         throw new MappingException("There are more than one instance of " +
