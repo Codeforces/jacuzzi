@@ -19,7 +19,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
     private Field idField;
     private String tableName;
 
-    private void ensureMapping() {
+    private synchronized void ensureMapping() {
         if (fields == null) {
             System.out.println("ensureMapping");
             fields = new ArrayList<Field>();
