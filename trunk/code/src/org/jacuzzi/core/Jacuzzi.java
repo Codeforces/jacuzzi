@@ -31,6 +31,21 @@ public class Jacuzzi {
     }
 
     /**
+     * Attaches connection to the current thread.
+     * Starting from the call Jacuzzi will operate with
+     * single JDBC connection. Use detachConnection() to
+     * detach it.
+     */
+    public void attachConnection() {
+        DataSourceUtil.attachConnection();
+    }
+
+    /** Detaches connection from the current thread. */
+    public void detachConnection() {
+        DataSourceUtil.detachConnection();
+    }
+
+    /**
      * Call it to begin transaction around
      * current connection in current thread.
      * <p/>
@@ -41,7 +56,7 @@ public class Jacuzzi {
      *                       (use Connection constants).
      */
     public void beginTransaction(int isolationLevel) {
-        DataSourceUtil.attachConnection();
+        attachConnection();
 
         Connection connection = DataSourceUtil.getConnection(dataSource);
 
@@ -71,7 +86,7 @@ public class Jacuzzi {
         try {
             connection.commit();
             connection.setAutoCommit(true);
-            DataSourceUtil.detachConnection();
+            detachConnection();
         } catch (SQLException e) {
             throw new DatabaseException("Engine doesn't support transactions or connection is closed.", e);
         }
@@ -84,7 +99,7 @@ public class Jacuzzi {
         try {
             connection.rollback();
             connection.setAutoCommit(true);
-            DataSourceUtil.detachConnection();
+            detachConnection();
         } catch (SQLException e) {
             throw new DatabaseException("Engine doesn't support transactions or connection is closed.");
         }
