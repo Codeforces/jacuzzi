@@ -2,12 +2,12 @@ package org.jacuzzi.core;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Constructor;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.sql.SQLException;
-import java.sql.Connection;
 
 /** @author Mike Mirzayanov */
 public class Jacuzzi {
@@ -87,6 +87,7 @@ public class Jacuzzi {
             connection.commit();
             connection.setAutoCommit(true);
             detachConnection();
+            DataSourceUtil.closeConnection(connection);
         } catch (SQLException e) {
             throw new DatabaseException("Engine doesn't support transactions or connection is closed.", e);
         }
@@ -100,6 +101,7 @@ public class Jacuzzi {
             connection.rollback();
             connection.setAutoCommit(true);
             detachConnection();
+            DataSourceUtil.closeConnection(connection);
         } catch (SQLException e) {
             throw new DatabaseException("Engine doesn't support transactions or connection is closed.");
         }
@@ -114,13 +116,12 @@ public class Jacuzzi {
      * @return The number of affected rows.
      */
     public int execute(String query, Object... args) {
-        synchronized (dataSource) {
             try {
                 return PreparedStatementUtil.execute(dataSource, query, args);
             } catch (SQLException e) {
+                System.err.println(query);
                 throw new DatabaseException(e);
             }
-        }
     }
 
     /**
@@ -132,13 +133,12 @@ public class Jacuzzi {
      * @return Selected rows.
      */
     public List<Row> findRows(String query, Object... args) {
-        synchronized (dataSource) {
             try {
                 return PreparedStatementUtil.findRows(dataSource, query, args);
             } catch (SQLException e) {
+                System.err.println(query);
                 throw new DatabaseException(e);
             }
-        }
     }
 
     /**
@@ -150,13 +150,12 @@ public class Jacuzzi {
      * @return The first selected row.
      */
     public Row findFirstRow(String query, Object... args) {
-        synchronized (dataSource) {
             try {
                 return PreparedStatementUtil.findFirstRow(dataSource, query, args);
             } catch (SQLException e) {
+                System.err.println(query);
                 throw new DatabaseException(e);
             }
-        }
     }
 
     /**
@@ -168,13 +167,12 @@ public class Jacuzzi {
      * @return The only value in the only row.
      */
     public Object findOne(String query, Object... args) {
-        synchronized (dataSource) {
             try {
                 return PreparedStatementUtil.findOne(dataSource, query, args);
             } catch (SQLException e) {
+                System.err.println(query);
                 throw new DatabaseException(e);
             }
-        }
     }
 
     /**
@@ -236,6 +234,18 @@ public class Jacuzzi {
                 }
             }
         }
+    }
+
+    /**
+     * This method you can use to convert the data from JDBC into specific
+     * java instances. For example, JDBC returns string but we need enum instance.
+     *
+     * @param instance Instance to be converted.
+     * @param clazz Target class.
+     * @return T Converted instance.
+     */
+    public<T> T convertTo(Object instance, Class<T> clazz) {
+        return TypeOracle.convertTo(instance, clazz);
     }
 
     // Contains helper routine.

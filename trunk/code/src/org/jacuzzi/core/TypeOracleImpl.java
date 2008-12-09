@@ -9,7 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
- * @author: Mike Mirzayanov
+ * @author Mike Mirzayanov
  */
 class TypeOracleImpl<T> extends TypeOracle<T> {
     private FastClass fastClazz;
@@ -21,7 +21,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
 
     private synchronized void ensureMapping() {
         if (fields == null) {
-            System.out.println("ensureMapping");
+            //System.out.println("ensureMapping");
             fields = new ArrayList<Field>();
             fieldsByColumns = new HashMap<String, Field>();
             fastClazz = FastClass.create(clazz);
@@ -70,7 +70,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
     }
 
     TypeOracleImpl(Class<T> clazz) {
-        System.out.println("TypeOracleImpl created!");
+        //System.out.println("TypeOracleImpl created!");
         this.clazz = clazz;
     }
 
@@ -157,7 +157,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         return instance;
     }
 
-    private void ensureFastClazz() {
+    private synchronized void ensureFastClazz() {
         if (fastClazz == null) {
             fastClazz = FastClass.create(clazz);
         }
@@ -167,14 +167,16 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         ensureMapping();
 
         Set<String> columns = row.keySet();
-
         T instance = newInstance();
 
         for (String column: columns) {
             if (fieldsByColumns.containsKey(column)) {
                 Field field = fieldsByColumns.get(column);
                 try {
-                    field.getSetter().invoke(instance, new Object[]{row.get(column)});
+                    Object parameter = row.get(column);
+                    Class<?> expectedParameterType = field.getSetter().getParameterTypes()[0];
+                    Object castedParameter = convertTo(parameter, expectedParameterType);
+                    field.getSetter().invoke(instance, new Object[]{castedParameter});
                 } catch (InvocationTargetException e) {
                     throw new MappingException("Can't invoke setter " + field.getSetter() + " for parameter " + row.get(column).getClass() + ".");
                 }

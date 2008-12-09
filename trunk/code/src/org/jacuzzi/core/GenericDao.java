@@ -73,6 +73,14 @@ public interface GenericDao<T, K> {
     boolean update(T object);
 
     /**
+     * Deletes instance.
+     *
+     * @param object Object to be deleted.
+     * @return {@code true} iff deleted succesfully.
+     */
+    boolean delete(T object);
+
+    /**
      * Creates new entity instance.
      * Doesn't set any field.
      *

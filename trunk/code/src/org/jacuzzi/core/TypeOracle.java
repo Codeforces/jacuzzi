@@ -1,6 +1,7 @@
 package org.jacuzzi.core;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * @author Mike Mirzayanov
@@ -26,10 +27,35 @@ public abstract class TypeOracle<T> {
         if (cache.containsKey(typeClass)) {
             return (CachedTypeOracle<T>) cache.get(typeClass);
         } else {
-            System.out.println("TypeOracle created!");
+            //System.out.println("TypeOracle created!");
             CachedTypeOracle<T> typeOracle = new CachedTypeOracle<T>(typeClass);
             cache.put(typeClass, typeOracle);
             return typeOracle;
         }
     }
+
+    static<T> T convertTo(Object parameter, Class<T> expectedClazz) {
+        if (parameter == null) {
+            return null;
+        } else {
+            if (parameter.getClass().equals(String.class) && expectedClazz.isEnum()) {
+                return convertStringToEnum((String) parameter, expectedClazz);
+            } else {
+                return (T) parameter;
+            }
+        }
+    }
+
+    static<T> T convertStringToEnum(String s, Class<T> expectedClazz) {
+        Object[] values = expectedClazz.getEnumConstants();
+
+        for (Object value : values) {
+            if (value.toString().equals(s)) {
+                return (T) value;
+            }
+        }
+
+        throw new NoSuchElementException("Can't find element " + s + " in " + expectedClazz + ".");
+    }
+
 }

@@ -1,7 +1,7 @@
 package org.jacuzzi.core;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Mike Mirzayanov

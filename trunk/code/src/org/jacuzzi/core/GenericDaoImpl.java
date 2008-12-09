@@ -2,8 +2,8 @@ package org.jacuzzi.core;
 
 import javax.sql.DataSource;
 import java.lang.reflect.ParameterizedType;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /** @author Mike Mirzayanov */
 public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
@@ -128,6 +128,12 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         arguments[arguments.length - 1] = typeOracle.getIdValue(object);
 
         return 1 == jacuzzi.execute(query.toString(), arguments);
+    }
+
+    public boolean delete(T object) {
+        String idColumn = typeOracle.getIdColumn();
+        StringBuffer query = new StringBuffer(Query.format("DELETE FROM ?t WHERE ?f = ?", typeOracle.getTableName(), idColumn));
+        return 1 == jacuzzi.execute(query.toString(), typeOracle.getIdValue(object));
     }
 
     public T newInstance() {
