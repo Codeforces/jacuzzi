@@ -63,7 +63,7 @@ public class Row extends HashMap<String, Object> {
         Row row = new Row();
         try {
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                row.put(metaData.getColumnName(i), resultSet.getObject(i));
+                row.put(metaData.getColumnLabel(i), resultSet.getObject(i));
             }
         } catch (SQLException e) {
             throw new DatabaseException("Can't add row from the result set.", e);
