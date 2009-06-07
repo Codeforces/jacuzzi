@@ -4,7 +4,7 @@
   <groupId>jacuzzi</groupId>
   <artifactId>jacuzzi-demo</artifactId>
   <packaging>jar</packaging>
-  <version>0.0.21</version>
+  <version>0.0.21-SNAPSHOT</version>
   <name>jacuzzi</name>
   <url>http://code.google.com/p/jacuzzi</url>
   <licenses>
@@ -31,7 +31,7 @@
     <dependency>
       <groupId>jacuzzi</groupId>
       <artifactId>jacuzzi</artifactId>
-      <version>0.0.21</version>
+      <version>0.0.21-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
