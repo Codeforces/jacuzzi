@@ -6,10 +6,10 @@ import java.util.List;
 
 /** @author Mike Mirzayanov */
 class PreparedStatementUtil {
-    static List<Row> findRows(DataSource dataSource, String query, Object... args) throws SQLException {
+    static List<Row> findRows(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object... args) throws SQLException {
         //System.out.println(query);
 
-        Connection connection = DataSourceUtil.getConnection(dataSource);
+        Connection connection = dataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
 
         try {
@@ -22,15 +22,15 @@ class PreparedStatementUtil {
             return Row.readFromResultSet(resultSet);
         } finally {
             tryCloseStatement(statement);
-            tryCloseConnection(connection);
+            tryCloseConnection(dataSourceUtil, connection);
         }
     }
 
-    public static int execute(DataSource dataSource, String query,
+    public static int execute(DataSource dataSource, DataSourceUtil dataSourceUtil, String query,
                               Object[] args, List<Row> generatedKeys) throws SQLException {
         //System.out.println(query);
 
-        Connection connection = DataSourceUtil.getConnection(dataSource);
+        Connection connection = dataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
 
         try {
@@ -47,14 +47,14 @@ class PreparedStatementUtil {
             }
         } finally {
             tryCloseStatement(statement);
-            tryCloseConnection(connection);
+            tryCloseConnection(dataSourceUtil, connection);
         }
     }
 
-    public static Row findFirstRow(DataSource dataSource, String query, Object[] args) throws SQLException {
+    public static Row findFirstRow(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args) throws SQLException {
         //System.out.println(query);
 
-        Connection connection = DataSourceUtil.getConnection(dataSource);
+        Connection connection = dataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
 
         try {
@@ -67,14 +67,14 @@ class PreparedStatementUtil {
             return Row.readFirstFromResultSet(resultSet);
         } finally {
             tryCloseStatement(statement);
-            tryCloseConnection(connection);
+            tryCloseConnection(dataSourceUtil, connection);
         }
     }
 
-    public static Object findOne(DataSource dataSource, String query, Object[] args) throws SQLException {
+    public static Object findOne(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args) throws SQLException {
         //System.out.println(query);
 
-        Connection connection = DataSourceUtil.getConnection(dataSource);
+        Connection connection = dataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
 
         try {
@@ -107,12 +107,12 @@ class PreparedStatementUtil {
             return result;
         } finally {
             tryCloseStatement(statement);
-            tryCloseConnection(connection);
+            tryCloseConnection(dataSourceUtil, connection);
         }
     }
 
-    private static void tryCloseConnection(Connection connection) {
-        DataSourceUtil.closeConnection(connection);
+    private static void tryCloseConnection(DataSourceUtil dataSourceUtil, Connection connection) {
+        dataSourceUtil.closeConnection(connection);
     }
 
     private static void tryCloseStatement(Statement statement) {

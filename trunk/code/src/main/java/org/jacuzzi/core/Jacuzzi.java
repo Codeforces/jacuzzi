@@ -15,6 +15,11 @@ public class Jacuzzi {
      */
     private final DataSource dataSource;
 
+    /**
+     * Helper routine around {@code DataSource}.
+     */
+    private final DataSourceUtil dataSourceUtil = new DataSourceUtil();
+
     /** For each entity class there is correspondent DAO. */
     private final Map<Class<?>, GenericDao<?, ?>> daoCache = new HashMap<Class<?>, GenericDao<?, ?>>();
 
@@ -34,12 +39,12 @@ public class Jacuzzi {
      * detach it.
      */
     public void attachConnection() {
-        DataSourceUtil.attachConnection();
+        dataSourceUtil.attachConnection();
     }
 
     /** Detaches connection from the current thread. */
     public void detachConnection() {
-        DataSourceUtil.detachConnection();
+        dataSourceUtil.detachConnection();
     }
 
     /**
@@ -54,8 +59,7 @@ public class Jacuzzi {
      */
     public void beginTransaction(int isolationLevel) {
         attachConnection();
-
-        Connection connection = DataSourceUtil.getConnection(dataSource);
+        Connection connection = dataSourceUtil.getConnection(dataSource);
 
         try {
             connection.setTransactionIsolation(isolationLevel);
@@ -78,29 +82,39 @@ public class Jacuzzi {
 
     /** Commits current transaction. */
     public void commit() {
-        Connection connection = DataSourceUtil.getAttachedConnection(dataSource);
+        Connection connection = dataSourceUtil.getAttachedConnection(dataSource);
 
         try {
             connection.commit();
-            connection.setAutoCommit(true);
-            detachConnection();
-            DataSourceUtil.closeConnection(connection);
         } catch (SQLException e) {
             throw new DatabaseException("Engine doesn't support transactions or connection is closed.", e);
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                // No operations.
+            }
+            detachConnection();
+            dataSourceUtil.closeConnection(connection);
         }
     }
 
     /** Rollbacks current transaction. */
     public void rollback() {
-        Connection connection = DataSourceUtil.getAttachedConnection(dataSource);
+        Connection connection = dataSourceUtil.getAttachedConnection(dataSource);
 
         try {
             connection.rollback();
-            connection.setAutoCommit(true);
-            detachConnection();
-            DataSourceUtil.closeConnection(connection);
         } catch (SQLException e) {
             throw new DatabaseException("Engine doesn't support transactions or connection is closed.");
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                // No operations.
+            }
+            detachConnection();
+            dataSourceUtil.closeConnection(connection);
         }
     }
 
@@ -114,7 +128,7 @@ public class Jacuzzi {
      */
     public int execute(String query, Object... args) {
         try {
-            return PreparedStatementUtil.execute(dataSource, query, args, null);
+            return PreparedStatementUtil.execute(dataSource, dataSourceUtil, query, args, null);
         } catch (SQLException e) {
             System.err.println(query);
             throw new DatabaseException(e);
@@ -133,7 +147,7 @@ public class Jacuzzi {
     public InsertResult insert(String query, Object... args) {
         try {
             List<Row> generated = new LinkedList<Row>();
-            int count = PreparedStatementUtil.execute(dataSource, query, args, generated);
+            int count = PreparedStatementUtil.execute(dataSource, dataSourceUtil, query, args, generated);
             if (generated.size() == 0) {
                 return new InsertResult(count, new Row());
             } else {
@@ -158,7 +172,7 @@ public class Jacuzzi {
      */
     public List<Row> findRows(String query, Object... args) {
         try {
-            return PreparedStatementUtil.findRows(dataSource, query, args);
+            return PreparedStatementUtil.findRows(dataSource, dataSourceUtil, query, args);
         } catch (SQLException e) {
             System.err.println(query);
             throw new DatabaseException(e);
@@ -175,7 +189,7 @@ public class Jacuzzi {
      */
     public Row findFirstRow(String query, Object... args) {
         try {
-            return PreparedStatementUtil.findFirstRow(dataSource, query, args);
+            return PreparedStatementUtil.findFirstRow(dataSource, dataSourceUtil, query, args);
         } catch (SQLException e) {
             System.err.println(query);
             throw new DatabaseException(e);
@@ -192,7 +206,7 @@ public class Jacuzzi {
      */
     public Object findOne(String query, Object... args) {
         try {
-            return PreparedStatementUtil.findOne(dataSource, query, args);
+            return PreparedStatementUtil.findOne(dataSource, dataSourceUtil, query, args);
         } catch (SQLException e) {
             System.err.println(query);
             throw new DatabaseException(e);
