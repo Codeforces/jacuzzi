@@ -17,13 +17,13 @@ import java.sql.SQLException;
  */
 class DataSourceUtil {
     /** Attached connection per thread. */
-    private static final ThreadLocal<Connection> attachedConnection = new ThreadLocal<Connection>();
+    private final ThreadLocal<Connection> attachedConnection = new ThreadLocal<Connection>();
 
     /**
      * You can attach connection for a short time (default value is 10 sec).
      * This value stores expiration time.
      */
-    private static final ThreadLocal<Long> attachExpirationTime = new ThreadLocal<Long>();
+    private final ThreadLocal<Long> attachExpirationTime = new ThreadLocal<Long>();
 
     /** Default lease time. */
     private static final long LEASE_TIME = /*10000;*/ Integer.MAX_VALUE;
@@ -34,18 +34,18 @@ class DataSourceUtil {
      * single JDBC connection. Use detachConnection() to
      * detach it.
      */
-    public static synchronized void attachConnection() {
+    public synchronized void attachConnection() {
         if (!isConnectionAttached()) {
             attachExpirationTime.set(System.currentTimeMillis() + LEASE_TIME);
         }
     }
 
-    private static boolean isConnectionAttached() {
+    private boolean isConnectionAttached() {
         return attachExpirationTime.get() != null;
     }
 
     /** Detaches connection from the current thread. */
-    public static synchronized void detachConnection() {
+    public synchronized void detachConnection() {
         if (!isConnectionAttached()) {
             throw new DatabaseException("detachConnection() called but attached connection not found.");
         }
@@ -69,7 +69,7 @@ class DataSourceUtil {
      * @param expectAttached <code>true</code> iff DatabaseException should be thrown on no attached connection.
      * @return Connection instance.
      */
-    private static Connection getConnection(DataSource dataSource, boolean expectAttached) {
+    private Connection getConnection(DataSource dataSource, boolean expectAttached) {
         try {
             if (!isConnectionAttached()) {
                 if (expectAttached) {
@@ -103,7 +103,7 @@ class DataSourceUtil {
      * @return Connection Finds new connection. If connection has been attached, then it returns one connection
      *         each call before detachConnection().
      */
-    public static synchronized Connection getConnection(DataSource dataSource) {
+    public synchronized Connection getConnection(DataSource dataSource) {
         return getConnection(dataSource, false);
     }
 
@@ -111,7 +111,7 @@ class DataSourceUtil {
      * @param dataSource of type DataSource
      * @return Connection Returns attached connection or throws DatabaseException if it doesn't attached.
      */
-    public static synchronized Connection getAttachedConnection(DataSource dataSource) {
+    public synchronized Connection getAttachedConnection(DataSource dataSource) {
         return getConnection(dataSource, true);
     }
 
@@ -120,7 +120,7 @@ class DataSourceUtil {
      *
      * @param connection of type Connection
      */
-    public static synchronized void closeConnection(Connection connection) {
+    public synchronized void closeConnection(Connection connection) {
         if (!isConnectionAttached()) {
             try {
                 connection.close();

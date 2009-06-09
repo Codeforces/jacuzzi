@@ -31,7 +31,7 @@
     <dependency>
       <groupId>jacuzzi</groupId>
       <artifactId>jacuzzi</artifactId>
-      <version>0.0.21-SNAPSHOT</version>
+      <version>0.0.22-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
