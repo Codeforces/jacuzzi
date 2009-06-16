@@ -226,6 +226,17 @@ public class Jacuzzi {
     }
 
     /**
+     * Executes query and returns the only value in the only row as {@code boolean}.
+     *
+     * @param query Raw SQL query.
+     * @param args  Arguments to replace "?" jokers in {@code query}.
+     * @return The only value in the only row as long.
+     */
+    public boolean findBoolean(String query, Object... args) {
+        return (Boolean) findOne(query, args);
+    }
+
+    /**
      * Executes query and returns the only value in the only row as {@code String}.
      * Use something like "SELECT name FROM SomeTable WHERE id = ?".
      *
