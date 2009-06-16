@@ -10,7 +10,7 @@
   <groupId>jacuzzi</groupId>
   <artifactId>jacuzzi</artifactId>
   <packaging>jar</packaging>
-  <version>0.0.22-SNAPSHOT</version>
+  <version>0.0.23-SNAPSHOT</version>
   <name>jacuzzi</name>
   <url>http://code.google.com/p/jacuzzi</url>
   <licenses>

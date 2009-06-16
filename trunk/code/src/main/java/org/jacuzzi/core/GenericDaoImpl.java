@@ -2,6 +2,7 @@ package org.jacuzzi.core;
 
 import javax.sql.DataSource;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collection;
@@ -154,10 +155,22 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         return typeOracle.newInstance();
     }
 
+    public String getTableName() {
+        return typeOracle.getTableName();
+    }
+
+    @SuppressWarnings({"unchecked"})
     protected synchronized Class<T> getTypeClass() {
-        if (typeClass == null) {
-            ParameterizedType type = (ParameterizedType) this.getClass().getGenericSuperclass();
-            typeClass = (Class<T>) type.getActualTypeArguments()[0];
+        Class<?> clazz = this.getClass();
+
+        while (typeClass == null) {
+            Type superClazz = clazz.getGenericSuperclass();
+
+            if (superClazz instanceof ParameterizedType) {
+                ParameterizedType type = (ParameterizedType) superClazz;
+                typeClass = (Class<T>) type.getActualTypeArguments()[0];
+            }
+            clazz = clazz.getSuperclass();
         }
 
         return typeClass;
