@@ -1,4 +1,5 @@
 #summary Introduction into jacuzzi
+#labels Featured
 
 = Introduction =
 
