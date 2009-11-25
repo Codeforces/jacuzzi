@@ -12,13 +12,10 @@ This is the sample code how to create and use jacuzzi DAOs:
         // We are recommending to use c3p0
         DataSource source = getDataSourceUsingApplicationSpecificMethod();
 
-        // Get jucuzzi instance, it will create it or get from cache
-        Jacuzzi jacuzzi = Jacuzzi.getJacuzzi(source);
-        
         // Create or get from cache DAOs
-        UserDao userDao = jacuzzi.getDao(UserDao.class);
-        EventDao eventDao = jacuzzi.getDao(EventDao.class);
-        GroupDao groupDao = jacuzzi.getDao(GroupDao.class);
+        UserDao userDao = new UserDao(source);
+        EventDao eventDao = new EventDao(source);
+        GroupDao groupDao = new GroupDao(source);
 
         // Get user by primary key
         User mike = userDao.find(1L);
