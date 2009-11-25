@@ -40,7 +40,16 @@ public class ForumPostDao extends GenericDaoImpl<ForumPost, String> {
 }
 }}}
 
-Below there are more interesting examples of the DAOs.
+Usually it is good idea to pass dataSource into DAO via dependency injection or via factory:
+{{{
+public class ForumPostDao extends GenericDaoImpl<ForumPost, String> {
+    protected ForumPostDao() {
+        super(ApplicationDataSourceFactory.getInstance());
+    }
+}
+}}}
+
+Below there is more interesting examples of the DAO implementation.
 {{{
 public class UserDao extends GenericDaoImpl<User, Long> {
     protected UserDao(DataSource source) {
