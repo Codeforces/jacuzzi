@@ -42,59 +42,36 @@ public class ForumPostDao extends GenericDaoImpl<ForumPost, String> {
 
 Below there are more interesting examples of the DAOs.
 {{{
-public class EventDao extends GenericDaoImpl<Event, Long> {
-    protected EventDao(DataSource source) {
-        super(source);
-    }
-
-    public User getUser(Event event) {
-        return getJacuzzi().getDao(UserDao.class).findByEvent(event);
-    }
-}
-
-public class GroupDao extends GenericDaoImpl<Group, Long> {
-    protected GroupDao(DataSource source) {
-        super(source);
-    }
-
-    public Group findByUser(User user) {
-        return convertFromRow(getJacuzzi().findFirstRow("SELECT `Group`.* " +
-                "FROM `Group`, `User` " +
-                "WHERE `Group`.id = `User`.groupId AND `User`.id = ?",
-                user.getId())
-        );
-    }
-}
-
 public class UserDao extends GenericDaoImpl<User, Long> {
     protected UserDao(DataSource source) {
         super(source);
     }
 
-    public Group findGroup(User user) {
-        return getJacuzzi().getDao(GroupDao.class).findByUser(user);
+    public User find(long id) {
+        return super.find(id);
+    }
+    
+    public List<User> findByEmail(String email) {
+        return findBy("email=?", email);
     }
 
-    public List<User> findFriends(User user) {
-        long id = user.getId();
-        return convertFromRows(
-                getJacuzzi().findRows("SELECT User.* FROM User, Friend " +
-                        "WHERE " +
-                        "(User.id = Friend.second AND Friend.first = ?) " +
-                        "OR " +
-                        "(User.id = Friend.first AND Friend.second = ?) " +
-                        "GROUP BY User.id",
-                        id, id
-                )
-        );
-    }
+    public boolean register(User user, String password) {
+        beginTransaction();
 
-    public User findByEvent(Event event) {
-        return convertFromRow(getJacuzzi().findFirstRow("SELECT User.* " +
-                "FROM User, Event " +
-                "WHERE User.id = Event.userId AND Event.id = ?",
-                event.getId())
-        );
+        try {
+            insert(user);
+
+            if (1 != getJacuzzi().execute("UPDATE User SET password=SHA1(?) WHERE id=?", password, user.getId())) {
+                throw new DatabaseException("Can't set password for user [id=" + user.getId() + "].");
+            }
+            commit();
+        } catch (Exception e) {
+            logger.error("Can't register user.", e);
+            rollback();
+            return false;
+        }
+
+        return true;
     }
 }
 }}}
