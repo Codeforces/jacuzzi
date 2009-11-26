@@ -14,8 +14,8 @@ class Query {
      * @return {@code query} with substitutions.
      */
     public static String format(String query, Object ... args) {
-        boolean tableQuotation = !"false".equals(System.getProperty("jacuzzi.tableQuotation"));
-        boolean fieldQuotation = !"false".equals(System.getProperty("jacuzzi.fieldQuotation"));
+        boolean tableQuotation = "true".equals(System.getProperty("jacuzzi.tableQuotation"));
+        boolean fieldQuotation = "true".equals(System.getProperty("jacuzzi.fieldQuotation"));
 
         StringBuffer result = new StringBuffer(query.length() + 32);
         int index = 0;
