@@ -5,6 +5,7 @@ import junit.framework.TestCase;
 import org.jacuzzi.core.GenericDaoImpl;
 import org.jacuzzi.core.Jacuzzi;
 import org.jacuzzi.core.Row;
+import org.jacuzzi.core.DatabaseException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -144,6 +145,31 @@ public class JacuzziTest extends TestCase {
         assertEquals(Thread.State.BLOCKED, jacuzzi.convertTo("BLOCKED", Thread.State.class));
         assertEquals("BLOCKED", jacuzzi.convertTo(Thread.State.BLOCKED, String.class));
         assertEquals("123", jacuzzi.convertTo(123L, String.class));
+    }
+
+    public void testFindOnlyBy() {
+        User user = new User();
+        user.setId(123);
+        user.setName("test");
+        commonDao.insert(user);
+
+        assertEquals(123L, userDao.findOnlyByName("test").getId());
+
+        user = new User();
+        user.setId(124);
+        user.setName("test");
+        commonDao.insert(user);
+
+        try {
+            userDao.findOnlyByName("test");
+            assertFalse(true);
+        } catch (DatabaseException e) {
+            // No operations.
+        }
+
+        user = commonDao.findOnlyBy(false, "name=?", "test");
+        assertTrue(user.getId() == 123 || user.getId() == 124);
+        assertEquals("test", user.getName());
     }
 
     public void testTransactions() throws InterruptedException {

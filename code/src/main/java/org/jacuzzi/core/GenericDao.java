@@ -71,17 +71,15 @@ public interface GenericDao<T, K> {
      * insert statement generates exactly one generated key (auto-incremented value).
      *
      * @param object Entity instance.
-     * @return {@code true} iff inserted succesfully.
-     *         Can return {@code false} if some database restrictions breaked.
      */
-    boolean insert(T object);
+    void insert(T object);
 
     /**
      * Updates entity instance.
      *
      * @param object Entity instance.
      * @return {@code true} iff inserted succesfully.
-     *         Can return {@code false} if some database restrictions breaked.
+     *         Can return {@code false} if no instance found for given id.
      */
     boolean update(T object);
 

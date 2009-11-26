@@ -126,7 +126,10 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         }
 
         if (count == 1) {
-            update(object);
+            if (!update(object)) {
+                throw new DatabaseException("Can't update instance of " + getKeyClass().getName() +
+                        " with id " + typeOracle.getIdValue(object) + " while processing save.");
+            }
             return;
         }
 
@@ -134,7 +137,7 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
                 typeClass + " with id = " + typeOracle.getIdValue(object) + ".");
     }
 
-    public boolean insert(T object) {
+    public void insert(T object) {
         boolean includeId = typeOracle.hasReasonableId(object);
 
         StringBuffer query = new StringBuffer(Query.format("INSERT INTO ?t ", typeOracle.getTableName()));
@@ -144,7 +147,7 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         Jacuzzi.InsertResult result = jacuzzi.insert(query.toString(), typeOracle.getValueListForInsert(includeId, object));
 
         if (result.getCount() != 1) {
-            return false;
+            throw new DatabaseException("Can't insert row into " + getTableName() + " for class " + getKeyClass().getName() + ".");
         } else {
             Collection<Object> keys = result.getGeneratedKeys().values();
 
@@ -152,8 +155,6 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
                 Object key = keys.iterator().next();
                 typeOracle.setIdValue(object, key);
             }
-
-            return true;
         }
     }
 
