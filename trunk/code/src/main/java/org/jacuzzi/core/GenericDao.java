@@ -54,7 +54,7 @@ public interface GenericDao<T, K> {
      *                         if given query returns more than one row.
      * @param query            SQL-expression returning result set, containing rows for T. It is possible to use
      *                         reduced form (like "login=?").
-     * @param args              Arguments to be substituted instead of "?".
+     * @param args             Arguments to be substituted instead of "?".
      * @return Instance of T or {@code null} if no instance found.
      */
     T findOnlyBy(boolean throwIfNotUnique, String query, Object... args);
@@ -71,6 +71,7 @@ public interface GenericDao<T, K> {
      * insert statement generates exactly one generated key (auto-incremented value).
      *
      * @param object Entity instance.
+     * @throws DatabaseException if can't save instance.
      */
     void insert(T object);
 
@@ -78,18 +79,17 @@ public interface GenericDao<T, K> {
      * Updates entity instance.
      *
      * @param object Entity instance.
-     * @return {@code true} iff inserted succesfully.
-     *         Can return {@code false} if no instance found for given id.
+     * @throws DatabaseException if no such instance found or on many other database errors.
      */
-    boolean update(T object);
+    void update(T object);
 
     /**
      * Deletes instance.
      *
      * @param object Object to be deleted.
-     * @return {@code true} iff deleted succesfully.
+     * @throws DatabaseException if no such instance found or on many other database errors.
      */
-    boolean delete(T object);
+    void delete(T object);
 
     /**
      * Creates new entity instance.
