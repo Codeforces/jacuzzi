@@ -126,10 +126,7 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         }
 
         if (count == 1) {
-            if (!update(object)) {
-                throw new DatabaseException("Can't update instance of " + getKeyClass().getName() +
-                        " with id " + typeOracle.getIdValue(object) + " while processing save.");
-            }
+            update(object);
             return;
         }
 
@@ -158,7 +155,7 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         }
     }
 
-    public boolean update(T object) {
+    public void update(T object) {
         StringBuffer query = new StringBuffer(Query.format("UPDATE ?t ", typeOracle.getTableName()));
         query.append(typeOracle.getQuerySetSql());
         query.append(Query.format(" WHERE ?f = ?", typeOracle.getIdColumn()));
@@ -168,13 +165,19 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         System.arraycopy(setArguments, 0, arguments, 0, setArguments.length);
         arguments[arguments.length - 1] = typeOracle.getIdValue(object);
 
-        return 1 == jacuzzi.execute(query.toString(), arguments);
+        if (1 != jacuzzi.execute(query.toString(), arguments)) {
+            throw new DatabaseException("Can't update instance of class " + getKeyClass().getName()
+                    + " with id " + typeOracle.getIdValue(object) + ".");
+        }
     }
 
-    public boolean delete(T object) {
+    public void delete(T object) {
         String idColumn = typeOracle.getIdColumn();
         StringBuffer query = new StringBuffer(Query.format("DELETE FROM ?t WHERE ?f = ?", typeOracle.getTableName(), idColumn));
-        return 1 == jacuzzi.execute(query.toString(), typeOracle.getIdValue(object));
+        if (1 != jacuzzi.execute(query.toString(), typeOracle.getIdValue(object))) {
+            throw new DatabaseException("Can't delete instance of class " + getKeyClass().getName()
+                    + " with id " + typeOracle.getIdValue(object) + ".");
+        }
     }
 
     public T newInstance() {

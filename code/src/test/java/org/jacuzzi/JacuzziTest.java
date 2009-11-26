@@ -99,11 +99,18 @@ public class JacuzziTest extends TestCase {
         user.setId(123);
         user.setName("test");
         commonDao.insert(user);
+
         user.setId(1123);
-        assertFalse(commonDao.update(user));
+        try {
+            commonDao.update(user);
+            assertFalse(true);
+        } catch (DatabaseException e) {
+            // No operations.
+        }
+
         user.setId(123);
         user.setName("tezt");
-        assertTrue(commonDao.update(user));
+        commonDao.update(user);
         assertEquals(1, commonDao.findAll().size());
         assertEquals(123L, commonDao.findAll().get(0).getId());
         assertEquals("tezt", commonDao.findAll().get(0).getName());
