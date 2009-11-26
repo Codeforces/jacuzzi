@@ -1,5 +1,6 @@
 package org.jacuzzi.core;
 
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -13,9 +14,19 @@ public abstract class TypeOracle<T> {
 
     public abstract T convertFromRow(Row row);
 
-    public abstract String getQuerySetSql();
+    public abstract List<T> convertFromRows(List<Row> rows);
 
-    public abstract Object[] getQuerySetArguments(T instance);
+    abstract String getFieldList(boolean includeId, boolean useTablePrefix);
+
+    abstract String getValuesPatternListForInsert(boolean includeId, T instance);
+
+    abstract Object[] getValueListForInsert(boolean includeId, T instance);
+
+    abstract boolean hasReasonableId(T instance);
+
+    abstract String getQuerySetSql();
+
+    abstract Object[] getQuerySetArguments(T instance);
 
     public abstract void setIdValue(T instance, Object value);
 
@@ -36,14 +47,18 @@ public abstract class TypeOracle<T> {
         }
     }
 
-    static<T> T convertTo(Object parameter, Class<T> expectedClazz) {
+    static <T> T convertTo(Object parameter, Class<T> expectedClazz) {
         if (parameter == null) {
             return null;
         } else {
             if (parameter.getClass().equals(String.class) && expectedClazz.isEnum()) {
                 return convertStringToEnum((String) parameter, expectedClazz);
             } else {
-                return (T) parameter;
+                if (expectedClazz.equals(String.class) && !parameter.getClass().equals(String.class)) {
+                    return (T) parameter.toString();
+                } else {
+                    return (T) parameter;
+                }
             }
         }
     }
@@ -59,5 +74,4 @@ public abstract class TypeOracle<T> {
 
         throw new NoSuchElementException("Can't find element " + s + " in " + expectedClazz + ".");
     }
-
 }

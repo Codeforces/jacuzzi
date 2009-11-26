@@ -4,8 +4,9 @@ import javax.sql.DataSource;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 
 /** @author Mike Mirzayanov */
 public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
@@ -47,6 +48,11 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         getJacuzzi().rollback();
     }
 
+    /** @return Current time as Date. */
+    protected Date findNow() {
+        return getJacuzzi().findDate("SELECT CURRENT_TIMESTAMP");
+    }
+
     public T find(K id) {
         String idColumn = typeOracle.getIdColumn();
 
@@ -65,7 +71,7 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
     }
 
     public List<T> findAll() {
-        return findBy("1");
+        return findBy("TRUE");
     }
 
     public List<T> findBy(String query, Object... args) {
@@ -75,12 +81,27 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
             }
 
             String table = typeOracle.getTableName();
-            query = Query.format("SELECT ?t.* FROM ?t ", table, table) + query;
+            query = "SELECT " + typeOracle.getFieldList(true, true) + Query.format(" FROM ?t ", table) + query;
         }
 
         List<Row> rows = jacuzzi.findRows(query, args);
 
         return convertFromRows(rows);
+    }
+
+    @Override
+    public T findOnlyBy(boolean throwIfNotUnique, String query, Object... args) {
+        List<T> instances = findBy(query, args);
+
+        if (instances.size() == 0) {
+            return null;
+        }
+
+        if (instances.size() > 1 && throwIfNotUnique) {
+            throw new DatabaseException("Too many instances of " + getKeyClass().getSimpleName() + " returned by \"" + query + "\".");
+        }
+
+        return instances.get(0);
     }
 
     protected List<T> convertFromRows(List<Row> rows) {
@@ -114,9 +135,13 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
     }
 
     public boolean insert(T object) {
+        boolean includeId = typeOracle.hasReasonableId(object);
+
         StringBuffer query = new StringBuffer(Query.format("INSERT INTO ?t ", typeOracle.getTableName()));
-        query.append(typeOracle.getQuerySetSql());
-        Jacuzzi.InsertResult result = jacuzzi.insert(query.toString(), typeOracle.getQuerySetArguments(object));
+        query.append("(").append(typeOracle.getFieldList(includeId, false)).append(") ");
+        query.append("VALUES (").append(typeOracle.getValuesPatternListForInsert(includeId, object)).append(")");
+
+        Jacuzzi.InsertResult result = jacuzzi.insert(query.toString(), typeOracle.getValueListForInsert(includeId, object));
 
         if (result.getCount() != 1) {
             return false;

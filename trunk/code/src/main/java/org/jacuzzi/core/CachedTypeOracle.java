@@ -2,6 +2,7 @@ package org.jacuzzi.core;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 /**
  * @author Mike Mirzayanov
@@ -39,11 +40,31 @@ class CachedTypeOracle<T> extends TypeOracle<T> {
         return typeOracle.convertFromRow(row);
     }
 
-    public String getQuerySetSql() {
+    public List<T> convertFromRows(List<Row> rows) {
+        return typeOracle.convertFromRows(rows);
+    }
+
+    String getFieldList(boolean includeId, boolean useTablePrefix) {
+        return typeOracle.getFieldList(includeId, useTablePrefix);
+    }
+
+    String getValuesPatternListForInsert(boolean includeId, T instance) {
+        return typeOracle.getValuesPatternListForInsert(includeId, instance);
+    }
+
+    Object[] getValueListForInsert(boolean includeId, T instance) {
+        return typeOracle.getValueListForInsert(includeId, instance);
+    }
+
+    boolean hasReasonableId(T instance) {
+        return typeOracle.hasReasonableId(instance);
+    }
+
+    String getQuerySetSql() {
         return typeOracle.getQuerySetSql();
     }
 
-    public Object[] getQuerySetArguments(T instance) {
+    Object[] getQuerySetArguments(T instance) {
         return typeOracle.getQuerySetArguments(instance);
     }
 

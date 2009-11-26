@@ -48,6 +48,18 @@ public interface GenericDao<T, K> {
     List<T> findBy(String query, Object... args);
 
     /**
+     * Returns the only instance for the specified query.
+     *
+     * @param throwIfNotUnique if {@code true} then method will throw DatabaseException
+     *                         if given query returns more than one row.
+     * @param query            SQL-expression returning result set, containing rows for T. It is possible to use
+     *                         reduced form (like "login=?").
+     * @param args              Arguments to be substituted instead of "?".
+     * @return Instance of T or {@code null} if no instance found.
+     */
+    T findOnlyBy(boolean throwIfNotUnique, String query, Object... args);
+
+    /**
      * Saves (inserts or updates) entity instance.
      *
      * @param object Entity instance.
