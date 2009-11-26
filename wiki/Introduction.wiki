@@ -50,7 +50,7 @@ public class ForumPostDao extends GenericDaoImpl<ForumPost, String> {
 }
 }}}
 
-Below there is more interesting examples of the DAO implementation.
+Below there is more interesting example of the DAO implementation.
 {{{
 public class UserDao extends GenericDaoImpl<User, Long> {
     protected UserDao(DataSource source) {
