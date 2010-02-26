@@ -6,9 +6,18 @@ import java.util.List;
 
 /** @author Mike Mirzayanov */
 class PreparedStatementUtil {
-    static List<Row> findRows(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object... args) throws SQLException {
-        //System.out.println(query);
+    private static final int MAX_RETRY_COUNT = 10;
 
+    static List<Row> findRows(final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object... args) throws SQLException {
+        return runAndReturn(new Invokable<List<Row>>() {
+            @Override
+            public List<Row> invoke() throws SQLException {
+                return internalFindRows(dataSource, dataSourceUtil, query, args);
+            }
+        });
+    }
+
+    private static List<Row> internalFindRows(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object... args) throws SQLException {
         Connection connection = dataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
 
@@ -26,10 +35,17 @@ class PreparedStatementUtil {
         }
     }
 
-    public static int execute(DataSource dataSource, DataSourceUtil dataSourceUtil, String query,
-                              Object[] args, List<Row> generatedKeys) throws SQLException {
-        //System.out.println(query);
+    public static int execute(final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query,
+                              final Object[] args, final List<Row> generatedKeys) throws SQLException {
+        return runAndReturn(new Invokable<Integer>() {
+            @Override
+            public Integer invoke() throws SQLException {
+                return internalExecute(dataSource, dataSourceUtil, query, args, generatedKeys);
+            }
+        });
+    }
 
+    private static int internalExecute(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args, List<Row> generatedKeys) throws SQLException {
         Connection connection = dataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
 
@@ -51,9 +67,16 @@ class PreparedStatementUtil {
         }
     }
 
-    public static Row findFirstRow(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args) throws SQLException {
-        //System.out.println(query);
+    public static Row findFirstRow(final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object[] args) throws SQLException {
+        return runAndReturn(new Invokable<Row>() {
+            @Override
+            public Row invoke() throws SQLException {
+                return internalFindFirstRow(dataSource, dataSourceUtil, query, args);
+            }
+        });
+    }
 
+    private static Row internalFindFirstRow(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args) throws SQLException {
         Connection connection = dataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
 
@@ -71,9 +94,16 @@ class PreparedStatementUtil {
         }
     }
 
-    public static Object findOne(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args) throws SQLException {
-        //System.out.println(query);
+    public static Object findOne(final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object[] args) throws SQLException {
+        return runAndReturn(new Invokable<Object>() {
+            @Override
+            public Object invoke() throws SQLException {
+                return internalFindOne(dataSource, dataSourceUtil, query, args);
+            }
+        });
+    }
 
+    private static Object internalFindOne(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args) throws SQLException {
         Connection connection = dataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
 
@@ -137,5 +167,28 @@ class PreparedStatementUtil {
 
     private static PreparedStatement getPreparedStatement(String query, Connection connection) throws SQLException {
         return connection.prepareStatement(query);
+    }
+
+    public static<T> T runAndReturn(Invokable<T> invokable) throws SQLException {
+        SQLRecoverableException exception = null;
+
+        for (int i = 0; i < MAX_RETRY_COUNT; i++) {
+            try {
+                return invokable.invoke();
+            } catch (SQLRecoverableException e) {
+                exception = e;
+                try {
+                    Thread.sleep((i + 1) * 1000L);
+                } catch (InterruptedException f) {
+                    // No operations.
+                }
+            }
+        }
+
+        throw exception;
+    }
+
+    private static interface Invokable<T> {
+        T invoke() throws SQLException;
     }
 }
