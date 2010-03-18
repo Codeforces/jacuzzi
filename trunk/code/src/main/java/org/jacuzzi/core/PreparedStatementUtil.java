@@ -166,7 +166,7 @@ class PreparedStatementUtil {
     }
 
     private static PreparedStatement getPreparedStatement(String query, Connection connection) throws SQLException {
-        return connection.prepareStatement(query);
+        return connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
     }
 
     public static<T> T runAndReturn(Invokable<T> invokable) throws SQLException {
