@@ -201,7 +201,11 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
                     query.append(",");
                 }
 
-                query.append("'").append(valueListForInsert[i]).append("'");
+                if (valueListForInsert[i] == null) {
+                    query.append(valueListForInsert[i]);
+                } else {
+                    query.append("'").append(valueListForInsert[i]).append("'");
+                }
             }
 
             query.append(")");
