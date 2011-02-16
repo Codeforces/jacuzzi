@@ -236,6 +236,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     public T newInstance() {
         T instance;
 

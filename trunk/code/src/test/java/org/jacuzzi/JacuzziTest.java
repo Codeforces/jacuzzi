@@ -2,10 +2,10 @@ package org.jacuzzi;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import junit.framework.TestCase;
+import org.jacuzzi.core.DatabaseException;
 import org.jacuzzi.core.GenericDaoImpl;
 import org.jacuzzi.core.Jacuzzi;
 import org.jacuzzi.core.Row;
-import org.jacuzzi.core.DatabaseException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -15,7 +15,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-/** @author Mike Mirzayanov */
+/**
+ * @author Mike Mirzayanov
+ */
 public class JacuzziTest extends TestCase {
     private UserDao userDao;
     private CommonDao commonDao;
@@ -64,6 +66,69 @@ public class JacuzziTest extends TestCase {
             user.setName("jacuzzi");
             userDao.insert(user);
         }
+        List<User> users = userDao.findByName("jacuzzi");
+        assertEquals(n, users.size());
+
+        List<Long> ids = new ArrayList<Long>();
+        for (User user : users) {
+            assertEquals("jacuzzi", user.getName());
+            ids.add(user.getId());
+        }
+
+        Collections.sort(ids);
+
+        long index = 0;
+        for (Long id : ids) {
+            index++;
+            assertEquals(index, id.longValue());
+        }
+    }
+
+    public void testThatThatMultipleInsertsInOneQueryWork() throws SQLException {
+        User user1 = new User();
+        User user2 = new User();
+        User user3 = new User();
+        User user4 = new User();
+
+        user1.setName("1");
+        user2.setName("2");
+        user3.setName("3");
+        user3.setId(5);
+        user4.setName("4");
+
+        userDao.insert(user1, user2, user3, user4);
+
+        List<User> users = userDao.findAll();
+        assertEquals(4, users.size());
+
+        assertEquals(1, user1.getId());
+        assertEquals(2, user2.getId());
+        assertEquals(5, user3.getId());
+        assertEquals(6, user4.getId());
+
+        assertEquals(1, users.get(0).getId());
+        assertEquals(2, users.get(1).getId());
+        assertEquals(5, users.get(2).getId());
+        assertEquals(6, users.get(3).getId());
+
+        assertEquals("1", users.get(0).getName());
+        assertEquals("2", users.get(1).getName());
+        assertEquals("3", users.get(2).getName());
+        assertEquals("4", users.get(3).getName());
+    }
+
+    public void testThatThatManyInsertsInOneQueryWork() throws SQLException {
+        int n = 1000;
+
+        List<User> usersToInsert = new ArrayList<User>(n);
+        for (int i = 0; i < n; i++) {
+            User user = new User();
+            user.setName("jacuzzi");
+            usersToInsert.add(user);
+        }
+
+        userDao.insert(usersToInsert);
+
         List<User> users = userDao.findByName("jacuzzi");
         assertEquals(n, users.size());
 

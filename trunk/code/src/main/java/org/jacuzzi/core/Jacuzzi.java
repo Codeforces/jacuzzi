@@ -6,7 +6,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 
-/** @author Mike Mirzayanov */
+/**
+ * @author Mike Mirzayanov
+ */
 public class Jacuzzi {
     /**
      * {@code DataSource} instance,
@@ -20,7 +22,9 @@ public class Jacuzzi {
      */
     private final DataSourceUtil dataSourceUtil = new DataSourceUtil();
 
-    /** For each entity class there is correspondent DAO. */
+    /**
+     * For each entity class there is correspondent DAO.
+     */
     private final Map<Class<?>, GenericDao<?, ?>> daoCache = new HashMap<Class<?>, GenericDao<?, ?>>();
 
     /**
@@ -42,7 +46,9 @@ public class Jacuzzi {
         dataSourceUtil.attachConnection();
     }
 
-    /** Detaches connection from the current thread. */
+    /**
+     * Detaches connection from the current thread.
+     */
     public void detachConnection() {
         dataSourceUtil.detachConnection();
     }
@@ -80,7 +86,9 @@ public class Jacuzzi {
         beginTransaction(Connection.TRANSACTION_SERIALIZABLE);
     }
 
-    /** Commits current transaction. */
+    /**
+     * Commits current transaction.
+     */
     public void commit() {
         Connection connection = dataSourceUtil.getAttachedConnection(dataSource);
 
@@ -99,7 +107,9 @@ public class Jacuzzi {
         }
     }
 
-    /** Rollbacks current transaction. */
+    /**
+     * Rollbacks current transaction.
+     */
     public void rollback() {
         Connection connection = dataSourceUtil.getAttachedConnection(dataSource);
 
@@ -136,7 +146,7 @@ public class Jacuzzi {
     }
 
     /**
-     * Executes INSERT query and resurns InsertResult which
+     * Executes INSERT query and returns InsertResult which
      * contains count and generated keys (auto-increments).
      *
      * @param query Raw SQL query.
@@ -149,13 +159,38 @@ public class Jacuzzi {
             List<Row> generated = new LinkedList<Row>();
             int count = PreparedStatementUtil.execute(dataSource, dataSourceUtil, query, args, generated);
             if (generated.size() == 0) {
-                return new InsertResult(count, new Row());
+                List<Row> generatedKeys = new ArrayList<Row>(1);
+                generatedKeys.add(new Row());
+                return new InsertResult(count, generatedKeys);
             } else {
                 if (generated.size() > 1) {
                     throw new DatabaseException("Unexpected generated key size " + generated.size() + ".");
                 }
-                return new InsertResult(count, generated.get(0));
+                return new InsertResult(count, generated);
             }
+        } catch (SQLException e) {
+            System.err.println(query);
+            throw new DatabaseException(e);
+        }
+    }
+
+    /**
+     * Executes INSERT query for multiple rows and returns
+     * InsertResult which contains count and
+     * generated keys (auto-increments).
+     *
+     * @param query Raw SQL query.
+     * @return InsertResult which
+     *         contains count and generated keys (auto-increments).
+     */
+    public InsertResult multipleInsert(String query) {
+        Object[] args = new Object[0];
+
+        try {
+            List<Row> generated = new LinkedList<Row>();
+            int count = PreparedStatementUtil.execute(dataSource, dataSourceUtil, query, args, generated);
+
+            return new InsertResult(count, generated);
         } catch (SQLException e) {
             System.err.println(query);
             throw new DatabaseException(e);
@@ -267,6 +302,7 @@ public class Jacuzzi {
      * @param daoClazz of type Class<T> Class<? extends GenericDao<?,?>> instance.
      * @return T DAO instance.
      */
+    @SuppressWarnings({"unchecked"})
     public <T extends GenericDao<?, ?>> T getDao(Class<T> daoClazz) {
         synchronized (daoCache) {
             if (daoCache.containsKey(daoClazz)) {
@@ -299,7 +335,9 @@ public class Jacuzzi {
 
     // Contains helper routine.
 
-    /** Thread local cache. */
+    /**
+     * Thread local cache.
+     */
     private static final ThreadLocal<Map<DataSource, Jacuzzi>> threadCache = new ThreadLocal<Map<DataSource, Jacuzzi>>() {
         /**
          * @return Map<DataSource, Jacuzzi> Creates empty map.
@@ -309,7 +347,9 @@ public class Jacuzzi {
         }
     };
 
-    /** @return Returns cache map from {@code DataSource} to {@code Jacuzzi}. */
+    /**
+     * @return Returns cache map from {@code DataSource} to {@code Jacuzzi}.
+     */
     private static Map<DataSource, Jacuzzi> getThreadCache() {
         return threadCache.get();
     }
@@ -337,9 +377,9 @@ public class Jacuzzi {
 
     public static class InsertResult {
         private int count;
-        private Row generatedKeys;
+        private List<Row> generatedKeys;
 
-        private InsertResult(int count, Row generatedKeys) {
+        private InsertResult(int count, List<Row> generatedKeys) {
             this.count = count;
             this.generatedKeys = generatedKeys;
         }
@@ -352,12 +392,16 @@ public class Jacuzzi {
             this.count = count;
         }
 
-        public Row getGeneratedKeys() {
-            return generatedKeys;
+        public Row getGeneratedKeysForRow(int rowIndex) {
+            return generatedKeys.get(rowIndex);
         }
 
-        public void setGeneratedKeys(Row generatedKeys) {
-            this.generatedKeys = generatedKeys;
+        public Row getGeneratedKeysForOneRow() {
+            return generatedKeys.get(0);
+        }
+
+        public List<Row> getGeneratedKeys() {
+            return generatedKeys;
         }
     }
 }

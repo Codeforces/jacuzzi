@@ -3,12 +3,11 @@ package org.jacuzzi.core;
 import javax.sql.DataSource;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
-/** @author Mike Mirzayanov */
+/**
+ * @author Mike Mirzayanov
+ */
 public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
     private Jacuzzi jacuzzi;
     private TypeOracle<T> typeOracle;
@@ -38,17 +37,23 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         getJacuzzi().beginTransaction();
     }
 
-    /** Commits current transaction. */
+    /**
+     * Commits current transaction.
+     */
     protected void commit() {
         getJacuzzi().commit();
     }
 
-    /** Rollbacks current transaction. */
+    /**
+     * Rollbacks current transaction.
+     */
     protected void rollback() {
         getJacuzzi().rollback();
     }
 
-    /** @return Current time as Date. */
+    /**
+     * @return Current time as Date.
+     */
     protected Date findNow() {
         return getJacuzzi().findDate("SELECT CURRENT_TIMESTAMP");
     }
@@ -146,11 +151,77 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         if (result.getCount() != 1) {
             throw new DatabaseException("Can't insert row into " + getTableName() + " for class " + getKeyClass().getName() + ".");
         } else {
-            Collection<Object> keys = result.getGeneratedKeys().values();
+            Collection<Object> keys = result.getGeneratedKeysForOneRow().values();
 
             if (keys.size() == 1) {
                 Object key = keys.iterator().next();
                 typeOracle.setIdValue(object, key);
+            }
+        }
+    }
+
+    public void insert(T... objects) {
+        insert(Arrays.asList(objects));
+    }
+
+    public void insert(List<T> objects) {
+        boolean includeId = false;
+
+        for (T object : objects) {
+            if (typeOracle.hasReasonableId(object)) {
+                includeId = true;
+                break;
+            }
+        }
+
+        StringBuilder query = new StringBuilder(Query.format("INSERT INTO ?t ", typeOracle.getTableName()));
+        query.append("(").append(typeOracle.getFieldList(includeId, false)).append(") ");
+        query.append("VALUES ");
+
+        boolean first = true;
+        for (T object : objects) {
+            if (first) {
+                first = false;
+            } else {
+                query.append(",");
+            }
+
+            query.append("(");
+
+            boolean hasReasonableId = typeOracle.hasReasonableId(object);
+
+            if (includeId && !hasReasonableId) {
+                query.append("NULL,");
+            }
+
+            Object[] valueListForInsert = typeOracle.getValueListForInsert(hasReasonableId, object);
+
+            for (int i = 0; i < valueListForInsert.length; i++) {
+                if (i > 0) {
+                    query.append(",");
+                }
+
+                query.append("'").append(valueListForInsert[i]).append("'");
+            }
+
+            query.append(")");
+        }
+
+        Jacuzzi.InsertResult result = jacuzzi.multipleInsert(query.toString());
+        List<Row> generatedKeys = result.getGeneratedKeys();
+
+        if (result.getCount() != objects.size() || generatedKeys.size() != objects.size()) {
+            throw new DatabaseException(
+                    "Can't insert multiple rows into " + getTableName() + " for class " + getKeyClass().getName() + "."
+            );
+        }
+
+        for (int i = 0; i < generatedKeys.size(); i++) {
+            Collection<Object> keys = result.getGeneratedKeysForRow(i).values();
+
+            if (keys.size() == 1) {
+                Object key = keys.iterator().next();
+                typeOracle.setIdValue(objects.get(i), key);
             }
         }
     }
@@ -205,6 +276,7 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         return typeClass;
     }
 
+    @SuppressWarnings({"unchecked"})
     protected synchronized Class<K> getKeyClass() {
         if (keyClass == null) {
             ParameterizedType type = (ParameterizedType) this.getClass().getGenericSuperclass();
