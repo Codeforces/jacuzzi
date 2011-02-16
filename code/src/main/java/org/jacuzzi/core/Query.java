@@ -56,7 +56,7 @@ class Query {
         }
 
         if (index != args.length) {
-            throw new IllegalArgumentException("There are not enought jokers in '" + query + "'.");
+            throw new IllegalArgumentException("There are not enough jokers in '" + query + "'.");
         }
 
         return result.toString();

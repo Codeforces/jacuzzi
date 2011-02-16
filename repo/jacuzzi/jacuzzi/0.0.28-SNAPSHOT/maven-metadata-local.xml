@@ -2,12 +2,11 @@
 <metadata>
   <groupId>jacuzzi</groupId>
   <artifactId>jacuzzi</artifactId>
-  <version>0.0.27-SNAPSHOT</version>
+  <version>0.0.28-SNAPSHOT</version>
   <versioning>
-    <versions>
-      <version>0.0.27-SNAPSHOT</version>
-      <version>0.0.28-SNAPSHOT</version>
-    </versions>
+    <snapshot>
+      <localCopy>true</localCopy>
+    </snapshot>
     <lastUpdated>20110216123041</lastUpdated>
   </versioning>
 </metadata>
