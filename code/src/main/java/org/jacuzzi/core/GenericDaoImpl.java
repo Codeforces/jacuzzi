@@ -160,10 +160,12 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         }
     }
 
+    @Override
     public void insert(T... objects) {
         insert(Arrays.asList(objects));
     }
 
+    @Override
     public void insert(List<T> objects) {
         boolean includeId = false;
 
