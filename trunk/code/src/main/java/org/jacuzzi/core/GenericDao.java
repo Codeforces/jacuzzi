@@ -76,6 +76,24 @@ public interface GenericDao<T, K> {
     void insert(T object);
 
     /**
+     * Inserts multiple entity instances. It updates instance's @Id field if
+     * insert statement generates exactly one generated key (auto-incremented value).
+     *
+     * @param objects Variable number of entity instances.
+     * @throws DatabaseException if can't save instances.
+     */
+    void insert(T... objects);
+
+    /**
+     * Inserts multiple entity instances. It updates instance's @Id field if
+     * insert statement generates exactly one generated key (auto-incremented value).
+     *
+     * @param objects List of entity instances.
+     * @throws DatabaseException if can't save instances.
+     */
+    void insert(List<T> objects);
+
+    /**
      * Updates entity instance.
      *
      * @param object Entity instance.
