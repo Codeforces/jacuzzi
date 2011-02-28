@@ -162,11 +162,19 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
 
     @Override
     public void insert(T... objects) {
+        if (objects == null || objects.length == 0) {
+            return;
+        }
+
         insert(Arrays.asList(objects));
     }
 
     @Override
     public void insert(List<T> objects) {
+        if (objects == null || objects.isEmpty()) {
+            return;
+        }
+
         boolean includeId = false;
 
         for (T object : objects) {
