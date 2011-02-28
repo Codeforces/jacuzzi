@@ -84,6 +84,16 @@ public class JacuzziTest extends TestCase {
         }
     }
 
+    public void testThatNullOrEmptyListForMultipleInsertsInOneQueryWork() throws SQLException {
+        userDao.insert();
+
+        User[] users = new User[0];
+        userDao.insert(users);
+
+        List<User> list = new ArrayList<User>();
+        userDao.insert(list);
+    }
+
     public void testThatThatMultipleInsertsInOneQueryWork() throws SQLException {
         User user1 = new User();
         User user2 = new User();
