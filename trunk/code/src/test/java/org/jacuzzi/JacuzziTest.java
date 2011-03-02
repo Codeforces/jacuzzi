@@ -102,7 +102,7 @@ public class JacuzziTest extends TestCase {
 
         user1.setName("1");
         user2.setName("2");
-        user2.setSurname("jacuzzi");
+        user2.setSurname("\"jacuzz'i\"");
         user3.setName("3");
         user3.setId(5);
         user4.setName("4");
@@ -126,7 +126,7 @@ public class JacuzziTest extends TestCase {
         assertNull(users.get(0).getSurname());
 
         assertEquals("2", users.get(1).getName());
-        assertEquals("jacuzzi", users.get(1).getSurname());
+        assertEquals("\"jacuzz'i\"", users.get(1).getSurname());
 
         assertEquals("3", users.get(2).getName());
         assertNull(users.get(2).getSurname());
