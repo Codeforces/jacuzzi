@@ -146,10 +146,13 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         query.append("(").append(typeOracle.getFieldList(includeId, false)).append(") ");
         query.append("VALUES (").append(typeOracle.getValuesPatternListForInsert(includeId, object)).append(")");
 
-        Jacuzzi.InsertResult result = jacuzzi.insert(query.toString(), typeOracle.getValueListForInsert(includeId, object));
+        Jacuzzi.InsertResult result =
+                jacuzzi.insert(query.toString(), typeOracle.getValueListForInsert(includeId, object));
 
         if (result.getCount() != 1) {
-            throw new DatabaseException("Can't insert row into " + getTableName() + " for class " + getKeyClass().getName() + ".");
+            throw new DatabaseException(
+                    "Can't insert row into " + getTableName() + " for class " + getKeyClass().getName() + "."
+            );
         } else {
             Collection<Object> keys = result.getGeneratedKeysForOneRow().values();
 
@@ -188,6 +191,8 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         query.append("(").append(typeOracle.getFieldList(includeId, false)).append(") ");
         query.append("VALUES ");
 
+        List<Object> values = new ArrayList<Object>();
+
         boolean first = true;
         for (T object : objects) {
             if (first) {
@@ -204,24 +209,15 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
                 query.append("NULL,");
             }
 
+            query.append(typeOracle.getValuesPatternListForInsert(hasReasonableId, object));
+
             Object[] valueListForInsert = typeOracle.getValueListForInsert(hasReasonableId, object);
-
-            for (int i = 0; i < valueListForInsert.length; i++) {
-                if (i > 0) {
-                    query.append(",");
-                }
-
-                if (valueListForInsert[i] == null) {
-                    query.append(valueListForInsert[i]);
-                } else {
-                    query.append("'").append(valueListForInsert[i]).append("'");
-                }
-            }
+            values.addAll(Arrays.asList(valueListForInsert));
 
             query.append(")");
         }
 
-        Jacuzzi.InsertResult result = jacuzzi.multipleInsert(query.toString());
+        Jacuzzi.InsertResult result = jacuzzi.multipleInsert(query.toString(), values.toArray());
         List<Row> generatedKeys = result.getGeneratedKeys();
 
         if (result.getCount() != objects.size() || generatedKeys.size() != objects.size()) {

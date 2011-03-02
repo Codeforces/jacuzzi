@@ -180,12 +180,11 @@ public class Jacuzzi {
      * generated keys (auto-increments).
      *
      * @param query Raw SQL query.
+     * @param args  Arguments to replace "?" jokers in {@code query}.
      * @return InsertResult which
      *         contains count and generated keys (auto-increments).
      */
-    public InsertResult multipleInsert(String query) {
-        Object[] args = new Object[0];
-
+    public InsertResult multipleInsert(String query, Object... args) {
         try {
             List<Row> generated = new LinkedList<Row>();
             int count = PreparedStatementUtil.execute(dataSource, dataSourceUtil, query, args, generated);
