@@ -69,15 +69,15 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
     public T find(K id) {
         String idColumn = typeOracle.getIdColumn();
 
-        List<T> list = findBy(Query.format("?f = ?", idColumn), id);
-        int listSize = list.size();
+        List<T> instances = findBy(Query.format("?f = ?", idColumn), id);
+        int instanceCount = instances.size();
 
-        if (listSize == 0) {
+        if (instanceCount == 0) {
             return null;
         }
 
-        if (listSize == 1) {
-            return list.get(0);
+        if (instanceCount == 1) {
+            return instances.get(0);
         }
 
         throw new IllegalStateException("There are more than one row this the same id " +
@@ -108,13 +108,13 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
     @Override
     public T findOnlyBy(boolean throwIfNotUnique, String query, Object... args) {
         List<T> instances = findBy(query, args);
-        int listSize = instances.size();
+        int instanceCount = instances.size();
 
-        if (listSize == 0) {
+        if (instanceCount == 0) {
             return null;
         }
 
-        if (listSize > 1 && throwIfNotUnique) {
+        if (instanceCount > 1 && throwIfNotUnique) {
             throw new DatabaseException("Too many instances of " + getKeyClass().getSimpleName() + " returned by \"" + query + "\".");
         }
 

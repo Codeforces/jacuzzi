@@ -2,10 +2,18 @@ package org.jacuzzi.core;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 /** @author Mike Mirzayanov */
 class PreparedStatementUtil {
+    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        }
+    };
+
     private static final int MAX_RETRY_COUNT = 10;
 
     static List<Row> findRows(final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object... args) throws SQLException {
@@ -159,9 +167,21 @@ class PreparedStatementUtil {
         for (int i = 0; i < args.length; i++) {
             if (args[i] instanceof Enum) {
                 statement.setString(i + 1, args[i].toString());
-            } else {
-                statement.setObject(i + 1, args[i]);
+                continue;
             }
+
+            if (args[i] instanceof java.util.Date) {
+                String text = DATE_FORMAT.get().format(args[i]);
+                statement.setString(i + 1, text);
+                continue;
+            }
+
+            if (args[i] instanceof String) {
+                statement.setString(i + 1, (String) args[i]);
+                continue;
+            }
+
+            statement.setObject(i + 1, args[i]);
         }
     }
 

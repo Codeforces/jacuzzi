@@ -18,5 +18,7 @@ public interface UserDao {
 
     List<User> findAll();
 
+    List<User> findBy(String query, Object... args);
+
     void delete(User user);
 }

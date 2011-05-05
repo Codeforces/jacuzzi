@@ -49,7 +49,7 @@ public class JacuzziTest extends TestCase {
         assertNull(userDao.findOnlyByName("test"));
     }
 
-    public void testThatThatUserListContainsExactlyOneItemAfterOneInsert() throws SQLException {
+    public void testThatUserListContainsExactlyOneItemAfterOneInsert() throws SQLException {
         User user = new User();
         user.setName("jacuzzi");
         userDao.insert(user);
@@ -57,6 +57,27 @@ public class JacuzziTest extends TestCase {
         assertEquals(1, users.size());
         assertEquals(1L, users.get(0).getId());
         assertEquals("jacuzzi", users.get(0).getName());
+    }
+
+    public void testThatSelectRecognitionWorks() throws SQLException {
+        User user = new User();
+        user.setName("jacuzzi");
+        userDao.insert(user);
+
+        assertEquals(1, userDao.findBy("SELECT\n" + "* FROM User WHERE name='jacuzzi'").size());
+        assertEquals(1, userDao.findBy("  \tsElEcT\t" + "* FROM User WHERE name='jacuzzi'").size());
+        assertEquals(1, userDao.findBy("\r\nselect\n" + "* FROM User WHERE name='jacuzzi'").size());
+    }
+
+    public void testThatWhereRecognitionWorks() throws SQLException {
+        User user = new User();
+        user.setName("jacuzzi");
+        userDao.insert(user);
+
+        assertEquals(1, userDao.findBy("WHERE name='jacuzzi'").size());
+        assertEquals(1, userDao.findBy("where name='jacuzzi'").size());
+        assertEquals(1, userDao.findBy("\nwhere name='jacuzzi'").size());
+        assertEquals(1, userDao.findBy("\nwhere\t name='jacuzzi'").size());
     }
 
     public void testThatThatManyInsertsWork() throws SQLException {
