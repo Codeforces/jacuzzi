@@ -179,7 +179,7 @@ class PreparedStatementUtil {
                 exception = e;
                 try {
                     Thread.sleep((i + 1) * 1000L);
-                } catch (InterruptedException f) {
+                } catch (InterruptedException ignored) {
                     // No operations.
                 }
             }
@@ -188,7 +188,7 @@ class PreparedStatementUtil {
         throw exception;
     }
 
-    private static interface Invokable<T> {
+    private interface Invokable<T> {
         T invoke() throws SQLException;
     }
 }
