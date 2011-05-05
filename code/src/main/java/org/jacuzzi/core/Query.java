@@ -17,7 +17,7 @@ class Query {
         boolean tableQuotation = "true".equals(System.getProperty("jacuzzi.tableQuotation"));
         boolean fieldQuotation = "true".equals(System.getProperty("jacuzzi.fieldQuotation"));
 
-        StringBuffer result = new StringBuffer(query.length() + 32);
+        StringBuilder result = new StringBuilder(query.length() + 32);
         int index = 0;
 
         for (int i = 0; i < query.length(); i++) {
