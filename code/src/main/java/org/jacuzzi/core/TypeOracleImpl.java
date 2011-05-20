@@ -8,7 +8,9 @@ import org.jacuzzi.mapping.MappedTo;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
-/** @author Mike Mirzayanov */
+/**
+ * @author Mike Mirzayanov
+ */
 class TypeOracleImpl<T> extends TypeOracle<T> {
     private FastClass fastClazz;
     private Class<T> clazz;
@@ -143,11 +145,18 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         StringBuilder result = new StringBuilder();
 
         for (Field field : fields) {
-            if (!field.isId() || includeId) {
-                if (result.length() > 0) {
-                    result.append(", ");
-                }
+            if (field.isId() && !includeId) {
+                continue;
+            }
+
+            if (result.length() > 0) {
+                result.append(", ");
+            }
+
+            if (!field.isId() || hasReasonableId(instance)) {
                 result.append("?");
+            } else {
+                result.append("NULL");
             }
         }
 

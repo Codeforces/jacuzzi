@@ -1,5 +1,6 @@
 package org.jacuzzi.core;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -108,6 +109,46 @@ public interface GenericDao<T, K> {
      * @throws DatabaseException if no such instance found or on many other database errors.
      */
     void delete(T object);
+
+    /**
+     * Delete multiple instances.
+     *
+     * @param objects Variable number of entity instances.
+     * @throws DatabaseException if can't delete instances.
+     */
+    void delete(T... objects);
+
+    /**
+     * Delete multiple instances.
+     *
+     * @param objects Collection of entity instances.
+     * @throws DatabaseException if can't delete instances.
+     */
+    void delete(Collection<T> objects);
+
+    /**
+     * Deletes instance.
+     *
+     * @param id Id of object to be deleted.
+     * @throws DatabaseException if no such instance found or on many other database errors.
+     */
+    void deleteById(K id);
+
+    /**
+     * Delete multiple instances by id.
+     *
+     * @param ids Variable number of entity ids.
+     * @throws DatabaseException if can't delete instances.
+     */
+    void deleteById(K... ids);
+
+    /**
+     * Delete multiple instances by id.
+     *
+     * @param ids Collection of entity ids.
+     * @throws DatabaseException if can't delete instances.
+     */
+    void deleteById(Collection<K> ids);
 
     /**
      * Creates new entity instance.

@@ -5,7 +5,9 @@ import org.jacuzzi.core.GenericDaoImpl;
 import javax.sql.DataSource;
 import java.util.List;
 
-/** @author Mike Mirzayanov */
+/**
+ * @author Mike Mirzayanov
+ */
 public class UserDaoImpl extends GenericDaoImpl<User, Long> implements UserDao {
     protected UserDaoImpl(DataSource source) {
         super(source);
