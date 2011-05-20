@@ -217,15 +217,11 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
 
             query.append('(');
 
-            boolean hasReasonableId = typeOracle.hasReasonableId(object);
+            query.append(typeOracle.getValuesPatternListForInsert(includeId, object));
 
-            if (includeId && !hasReasonableId) {
-                query.append("NULL,");
-            }
-
-            query.append(typeOracle.getValuesPatternListForInsert(hasReasonableId, object));
-
-            Object[] valueListForInsert = typeOracle.getValueListForInsert(hasReasonableId, object);
+            Object[] valueListForInsert = typeOracle.getValueListForInsert(
+                    includeId && typeOracle.hasReasonableId(object), object
+            );
             values.addAll(Arrays.asList(valueListForInsert));
 
             query.append(')');
@@ -267,13 +263,73 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         }
     }
 
-    @Override
+    @SuppressWarnings({"unchecked"})
     public void delete(T object) {
+        deleteById((K) typeOracle.getIdValue(object));
+    }
+
+    @Override
+    public void delete(T... objects) {
+        if (objects == null || objects.length == 0) {
+            return;
+        }
+
+        delete(Arrays.asList(objects));
+    }
+
+    @SuppressWarnings({"unchecked"})
+    @Override
+    public void delete(Collection<T> objects) {
+        Collection<K> objectIds = new ArrayList<K>(objects.size());
+        for (T object : objects) {
+            objectIds.add((K) typeOracle.getIdValue(object));
+        }
+
+        deleteById(objectIds);
+    }
+
+    @Override
+    public void deleteById(K id) {
         String idColumn = typeOracle.getIdColumn();
         StringBuilder query = new StringBuilder(Query.format("DELETE FROM ?t WHERE ?f = ?", typeOracle.getTableName(), idColumn));
-        if (jacuzzi.execute(query.toString(), typeOracle.getIdValue(object)) != 1) {
+        if (1 != jacuzzi.execute(query.toString(), id)) {
             throw new DatabaseException("Can't delete instance of class " + getKeyClass().getName()
-                    + " with id " + typeOracle.getIdValue(object) + '.');
+                    + " with id " + id + ".");
+        }
+    }
+
+    @Override
+    public void deleteById(K... ids) {
+        deleteById(Arrays.asList(ids));
+    }
+
+    @Override
+    public void deleteById(Collection<K> ids) {
+        String idColumn = typeOracle.getIdColumn();
+        StringBuilder query = new StringBuilder(
+                Query.format("DELETE FROM ?t WHERE ?f IN (", typeOracle.getTableName(), idColumn)
+        );
+
+        Object[] idValues = new Object[ids.size()];
+        int index = 0;
+
+        for (K id : ids) {
+            if (index > 0) {
+                query.append(",");
+            }
+            query.append("?");
+
+            idValues[index] = id;
+
+            index++;
+        }
+
+        query.append(")");
+
+        if (ids.size() != jacuzzi.execute(query.toString(), idValues)) {
+            throw new DatabaseException(
+                    "Can't delete multiple instances of class " + getKeyClass().getName() + "."
+            );
         }
     }
 

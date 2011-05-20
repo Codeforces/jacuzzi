@@ -34,6 +34,7 @@ public abstract class TypeOracle<T> {
 
     public abstract T newInstance();
 
+    @SuppressWarnings({"unchecked"})
     public static synchronized <T> TypeOracle<T> getTypeOracle(Class<T> typeClass) {
         Map<Class<?>, CachedTypeOracle<?>> cache = CachedTypeOracle.getThreadLocalCache();
 
@@ -47,6 +48,7 @@ public abstract class TypeOracle<T> {
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     static <T> T convertTo(Object parameter, Class<T> expectedClazz) {
         if (parameter == null) {
             return null;
@@ -63,7 +65,8 @@ public abstract class TypeOracle<T> {
         }
     }
 
-    static<T> T convertStringToEnum(String s, Class<T> expectedClazz) {
+    @SuppressWarnings({"unchecked"})
+    static <T> T convertStringToEnum(String s, Class<T> expectedClazz) {
         Object[] values = expectedClazz.getEnumConstants();
 
         for (Object value : values) {
