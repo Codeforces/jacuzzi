@@ -135,6 +135,10 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
 
     @Override
     public void save(T object) {
+        if (object == null) {
+            return;
+        }
+
         Long count = (Long) jacuzzi.findOne(Query.format("SELECT COUNT(*) FROM ?t WHERE ?f = ?",
                 typeOracle.getTableName(), typeOracle.getIdColumn()), typeOracle.getIdValue(object));
 
@@ -154,6 +158,10 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
 
     @Override
     public void insert(T object) {
+        if (object == null) {
+            return;
+        }
+
         boolean includeId = typeOracle.hasReasonableId(object);
 
         StringBuilder query = new StringBuilder(Query.format("INSERT INTO ?t ", typeOracle.getTableName()));
@@ -248,6 +256,10 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
 
     @Override
     public void update(T object) {
+        if (object == null) {
+            return;
+        }
+
         StringBuilder query = new StringBuilder(Query.format("UPDATE ?t ", typeOracle.getTableName()));
         query.append(typeOracle.getQuerySetSql());
         query.append(Query.format(" WHERE ?f = ?", typeOracle.getIdColumn()));
@@ -265,6 +277,10 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
 
     @SuppressWarnings({"unchecked"})
     public void delete(T object) {
+        if (object == null) {
+            return;
+        }
+
         deleteById((K) typeOracle.getIdValue(object));
     }
 
@@ -280,6 +296,10 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
     @SuppressWarnings({"unchecked"})
     @Override
     public void delete(Collection<T> objects) {
+        if (objects == null || objects.isEmpty()) {
+            return;
+        }
+
         Collection<K> objectIds = new ArrayList<K>(objects.size());
         for (T object : objects) {
             objectIds.add((K) typeOracle.getIdValue(object));
@@ -290,6 +310,10 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
 
     @Override
     public void deleteById(K id) {
+        if (id == null) {
+            return;
+        }
+
         String idColumn = typeOracle.getIdColumn();
         StringBuilder query = new StringBuilder(Query.format("DELETE FROM ?t WHERE ?f = ?", typeOracle.getTableName(), idColumn));
         if (1 != jacuzzi.execute(query.toString(), id)) {
@@ -300,11 +324,19 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
 
     @Override
     public void deleteById(K... ids) {
+        if (ids == null || ids.length == 0) {
+            return;
+        }
+
         deleteById(Arrays.asList(ids));
     }
 
     @Override
     public void deleteById(Collection<K> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+
         String idColumn = typeOracle.getIdColumn();
         StringBuilder query = new StringBuilder(
                 Query.format("DELETE FROM ?t WHERE ?f IN (", typeOracle.getTableName(), idColumn)
