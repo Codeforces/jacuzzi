@@ -236,20 +236,29 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         }
 
         Jacuzzi.InsertResult result = jacuzzi.multipleInsert(query.toString(), values.toArray());
-        List<Row> generatedKeys = result.getGeneratedKeys();
 
-        if (result.getCount() != objects.size() || generatedKeys.size() != objects.size()) {
+        if (result.getCount() != objects.size()) {
             throw new DatabaseException(
                     "Can't insert multiple rows into " + getTableName() + " for class " + getKeyClass().getName() + '.'
             );
         }
 
-        for (int i = 0; i < generatedKeys.size(); i++) {
-            Collection<Object> keys = result.getGeneratedKeysForRow(i).values();
+        List<Row> generatedKeys = result.getGeneratedKeys();
+        if (!generatedKeys.isEmpty()) {
+            if (generatedKeys.size() == objects.size()) {
+                for (int i = 0; i < generatedKeys.size(); i++) {
+                    Collection<Object> keys = result.getGeneratedKeysForRow(i).values();
 
-            if (keys.size() == 1) {
-                Object key = keys.iterator().next();
-                typeOracle.setIdValue(objects.get(i), key);
+                    if (keys.size() == 1) {
+                        Object key = keys.iterator().next();
+                        typeOracle.setIdValue(objects.get(i), key);
+                    }
+                }
+            } else {
+                throw new DatabaseException(
+                        "Unexpected number of rows with generated keys: " + generatedKeys.size() + " instead of " +
+                                objects.size() + "."
+                );
             }
         }
     }
