@@ -17,13 +17,13 @@ import java.sql.SQLException;
  */
 class DataSourceUtil {
     /** Attached connection per thread. */
-    private final ThreadLocal<Connection> attachedConnection = new ThreadLocal<Connection>();
+    private static final ThreadLocal<Connection> attachedConnection = new ThreadLocal<Connection>();
 
     /**
      * You can attach connection for a short time (default value is 10 sec).
      * This value stores expiration time.
      */
-    private final ThreadLocal<Long> attachExpirationTime = new ThreadLocal<Long>();
+    private static final ThreadLocal<Long> attachExpirationTime = new ThreadLocal<Long>();
 
     /** Default lease time. */
     private static final long LEASE_TIME = /*10000;*/ Integer.MAX_VALUE;
@@ -40,7 +40,7 @@ class DataSourceUtil {
         }
     }
 
-    private boolean isConnectionAttached() {
+    private static boolean isConnectionAttached() {
         return attachExpirationTime.get() != null;
     }
 
@@ -69,15 +69,9 @@ class DataSourceUtil {
      * @param expectAttached <code>true</code> iff DatabaseException should be thrown on no attached connection.
      * @return Connection instance.
      */
-    private Connection getConnection(DataSource dataSource, boolean expectAttached) {
+    private static Connection getConnection(DataSource dataSource, boolean expectAttached) {
         try {
-            if (!isConnectionAttached()) {
-                if (expectAttached) {
-                    throw new DatabaseException("Connection not attached.");
-                } else {
-                    return dataSource.getConnection();
-                }
-            } else {
+            if (isConnectionAttached()) {
                 long expTime = attachExpirationTime.get();
 
                 if (System.currentTimeMillis() > expTime) {
@@ -92,6 +86,12 @@ class DataSourceUtil {
                 }
 
                 return result;
+            } else {
+                if (expectAttached) {
+                    throw new DatabaseException("Connection not attached.");
+                } else {
+                    return dataSource.getConnection();
+                }
             }
         } catch (SQLException e) {
             throw new DatabaseException("Can't get connection from DataSource instance.", e);

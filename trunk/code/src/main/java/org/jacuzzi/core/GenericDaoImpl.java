@@ -257,7 +257,7 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
             } else {
                 throw new DatabaseException(
                         "Unexpected number of rows with generated keys: " + generatedKeys.size() + " instead of " +
-                                objects.size() + "."
+                                objects.size() + '.'
                 );
             }
         }
@@ -327,7 +327,7 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         StringBuilder query = new StringBuilder(Query.format("DELETE FROM ?t WHERE ?f = ?", typeOracle.getTableName(), idColumn));
         if (1 != jacuzzi.execute(query.toString(), id)) {
             throw new DatabaseException("Can't delete instance of class " + getKeyClass().getName()
-                    + " with id " + id + ".");
+                    + " with id " + id + '.');
         }
     }
 
@@ -356,20 +356,20 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
 
         for (K id : ids) {
             if (index > 0) {
-                query.append(",");
+                query.append(',');
             }
-            query.append("?");
+            query.append('?');
 
             idValues[index] = id;
 
             index++;
         }
 
-        query.append(")");
+        query.append(')');
 
         if (ids.size() != jacuzzi.execute(query.toString(), idValues)) {
             throw new DatabaseException(
-                    "Can't delete multiple instances of class " + getKeyClass().getName() + "."
+                    "Can't delete multiple instances of class " + getKeyClass().getName() + '.'
             );
         }
     }

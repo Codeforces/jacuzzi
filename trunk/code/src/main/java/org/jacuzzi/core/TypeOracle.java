@@ -75,6 +75,6 @@ public abstract class TypeOracle<T> {
             }
         }
 
-        throw new NoSuchElementException("Can't find element " + s + " in " + expectedClazz + ".");
+        throw new NoSuchElementException("Can't find element " + s + " in " + expectedClazz + '.');
     }
 }

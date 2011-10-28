@@ -3,6 +3,7 @@ package org.jacuzzi.core;
 import javax.sql.DataSource;
 import java.sql.*;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 /** @author Mike Mirzayanov */
@@ -116,8 +117,6 @@ class PreparedStatementUtil {
         PreparedStatement statement = null;
 
         try {
-            Object result = null;
-
             statement = getPreparedStatement(query, connection);
             setupPreparedStatementParameters(statement, args);
 
@@ -128,6 +127,8 @@ class PreparedStatementUtil {
                 throw new SQLException("Expected to return exactly one column, but "
                         + columnCount + " found for query " + query);
             }
+
+            Object result = null;
 
             if (resultSet.next()) {
                 result = resultSet.getObject(1);
@@ -170,7 +171,7 @@ class PreparedStatementUtil {
                 continue;
             }
 
-            if (args[i] instanceof java.util.Date) {
+            if (args[i] instanceof Date) {
                 String text = DATE_FORMAT.get().format(args[i]);
                 statement.setString(i + 1, text);
                 continue;

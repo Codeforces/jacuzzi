@@ -7,7 +7,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-/** @author Mike Mirzayanov */
+/**
+ * @author Mike Mirzayanov
+ */
 public class Row extends HashMap<String, Object> {
     /**
      * Extracts all rows from the result set and return them as List.
@@ -39,9 +41,8 @@ public class Row extends HashMap<String, Object> {
      */
     static Row readFirstFromResultSet(ResultSet resultSet) {
         List<Row> result = new LinkedList<Row>();
-        ResultSetMetaData metaData;
         try {
-            metaData = resultSet.getMetaData();
+            ResultSetMetaData metaData = resultSet.getMetaData();
             if (resultSet.next()) {
                 addRowFromResultSet(resultSet, result, metaData);
             }

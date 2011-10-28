@@ -15,7 +15,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     private FastClass fastClazz;
-    private Class<T> clazz;
+    private final Class<T> clazz;
     private List<Field> fields;
     private Map<String, Field> fieldsByColumns;
     private Field idField;

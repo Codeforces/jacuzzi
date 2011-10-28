@@ -33,7 +33,7 @@ class Query {
                         result.append('`');
                     }
 
-                    i++;
+                    ++i;
                     continue;
                 }
 
@@ -47,7 +47,7 @@ class Query {
                         result.append('`');
                     }
 
-                    i++;
+                    ++i;
                     continue;
                 }
             }
