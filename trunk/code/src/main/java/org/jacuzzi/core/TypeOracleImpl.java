@@ -12,6 +12,8 @@ import java.util.*;
  * @author Mike Mirzayanov
  */
 class TypeOracleImpl<T> extends TypeOracle<T> {
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
+
     private FastClass fastClazz;
     private Class<T> clazz;
     private List<Field> fields;
@@ -74,27 +76,30 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         this.clazz = clazz;
     }
 
+    @Override
     public String getIdColumn() {
         ensureMapping();
 
         if (idField == null) {
-            throw new MappingException("Can't find Id for class " + clazz + ".");
+            throw new MappingException("Can't find Id for class " + clazz + '.');
         }
 
         return idField.getColumn();
     }
 
+    @Override
     public String getTableName() {
         ensureMapping();
 
         return tableName;
     }
 
+    @Override
     public String getQuerySetSql() {
         ensureMapping();
 
-        if (fields.size() == 0) {
-            throw new MappingException("Nothing to set for class " + clazz + ".");
+        if (fields.isEmpty()) {
+            throw new MappingException("Nothing to set for class " + clazz + '.');
         }
 
         StringBuilder result = new StringBuilder();
@@ -111,8 +116,8 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
     public String getFieldList(boolean includeId, boolean useTablePrefix) {
         ensureMapping();
 
-        if (fields.size() == 0) {
-            throw new MappingException("Nothing to set for class " + clazz + ".");
+        if (fields.isEmpty()) {
+            throw new MappingException("Nothing to set for class " + clazz + '.');
         }
 
         StringBuilder result = new StringBuilder();
@@ -123,10 +128,10 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
                     result.append(", ");
                 }
 
-                if (!useTablePrefix) {
-                    result.append(Query.format("?f", field.getColumn()));
-                } else {
+                if (useTablePrefix) {
                     result.append(Query.format("?t.?f", tableName, field.getColumn()));
+                } else {
+                    result.append(Query.format("?f", field.getColumn()));
                 }
             }
         }
@@ -138,8 +143,8 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
     public String getValuesPatternListForInsert(boolean includeId, T instance) {
         ensureMapping();
 
-        if (fields.size() == 0) {
-            throw new MappingException("Nothing to set for class " + clazz + ".");
+        if (fields.isEmpty()) {
+            throw new MappingException("Nothing to set for class " + clazz + '.');
         }
 
         StringBuilder result = new StringBuilder();
@@ -154,7 +159,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
             }
 
             if (!field.isId() || hasReasonableId(instance)) {
-                result.append("?");
+                result.append('?');
             } else {
                 result.append("NULL");
             }
@@ -171,16 +176,17 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
             int index = 0;
             for (Field field : fields) {
                 if (!field.isId() || includeId) {
-                    result[index++] = field.getGetter().invoke(instance, new Object[0]);
+                    result[index++] = field.getGetter().invoke(instance, EMPTY_OBJECT_ARRAY);
                 }
             }
         } catch (InvocationTargetException e) {
-            throw new MappingException("Can't invoke getter for class " + clazz.getName() + ".", e);
+            throw new MappingException("Can't invoke getter for class " + clazz.getName() + '.', e);
         }
 
         return result;
     }
 
+    @Override
     @SuppressWarnings({"RedundantIfStatement"})
     public boolean hasReasonableId(T instance) {
         ensureMapping();
@@ -209,11 +215,12 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         return true;
     }
 
+    @Override
     public Object[] getQuerySetArguments(T instance) {
         ensureMapping();
 
-        if (fields.size() == 0) {
-            throw new MappingException("Nothing to set for class " + clazz + ".");
+        if (fields.isEmpty()) {
+            throw new MappingException("Nothing to set for class " + clazz + '.');
         }
 
         Object[] result = new Object[fields.size()];
@@ -222,39 +229,41 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
 
         for (Field field : fields) {
             try {
-                result[index++] = field.getGetter().invoke(instance, new Object[0]);
+                result[index++] = field.getGetter().invoke(instance, EMPTY_OBJECT_ARRAY);
             } catch (InvocationTargetException e) {
-                throw new MappingException("Can't invoke getter " + field.getGetter() + ".", e);
+                throw new MappingException("Can't invoke getter " + field.getGetter() + '.', e);
             }
         }
 
         return result;
     }
 
+    @Override
     public Object getIdValue(T instance) {
         ensureMapping();
 
         if (idField == null) {
-            throw new MappingException("Can't find id field for class " + clazz + ".");
+            throw new MappingException("Can't find id field for class " + clazz + '.');
         }
 
         try {
-            return idField.getGetter().invoke(instance, new Object[]{});
+            return idField.getGetter().invoke(instance, EMPTY_OBJECT_ARRAY);
         } catch (InvocationTargetException e) {
             throw new MappingException("Can't invoke getter " + idField.getGetter() + " to get id value.", e);
         }
     }
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public T newInstance() {
-        T instance;
-
         ensureFastClazz();
+
+        T instance;
 
         try {
             instance = (T) fastClazz.newInstance();
         } catch (InvocationTargetException e) {
-            throw new MappingException("Can't instantiate class " + clazz + ".", e);
+            throw new MappingException("Can't instantiate class " + clazz + '.', e);
         }
 
         return instance;
@@ -266,16 +275,18 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         }
     }
 
+    @Override
     public void setIdValue(T instance, Object value) {
         ensureMapping();
         try {
             idField.getSetter().invoke(instance, new Object[]{value});
         } catch (InvocationTargetException e) {
             throw new MappingException("Can't set value of type " + value.getClass().getName() +
-                    " to id of " + instance.getClass().getName() + ".", e);
+                    " to id of " + instance.getClass().getName() + '.', e);
         }
     }
 
+    @Override
     public T convertFromRow(Row row) {
         ensureMapping();
 
@@ -298,9 +309,9 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
                 } catch (InvocationTargetException e) {
                     if (row.get(column) != null) {
                         throw new MappingException("Can't invoke setter " + field.getSetter() + "[clazz=" +
-                                clazz.getName() + "] for parameter " + row.get(column).getClass() + ".", e);
+                                clazz.getName() + "] for parameter " + row.get(column).getClass() + '.', e);
                     } else {
-                        throw new MappingException("Can't invoke setter " + field.getSetter() + " for class " + clazz.getName() + ".", e);
+                        throw new MappingException("Can't invoke setter " + field.getSetter() + " for class " + clazz.getName() + '.', e);
                     }
                 }
             }
@@ -318,10 +329,8 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         return instances;
     }
 
-    private class Field {
-
+    private static class Field {
         private FastMethod setter;
-
         private FastMethod getter;
         private String name;
         private String column;
