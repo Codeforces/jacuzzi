@@ -31,7 +31,7 @@ class ReflectionUtil {
 
     static String getSetterName(String name) {
         if (name.length() < 1) {
-            throw new IllegalArgumentException("Field name too short '" + name + "'");
+            throw new IllegalArgumentException("Field name too short '" + name + "'.");
         }
 
         return "set" + Character.toUpperCase(name.charAt(0)) + name.substring(1);
@@ -39,7 +39,7 @@ class ReflectionUtil {
 
     static String getGetterName(String name) {
         if (name.length() < 1) {
-            throw new IllegalArgumentException("Field name too short '" + name + "'");
+            throw new IllegalArgumentException("Field name too short '" + name + "'.");
         }
 
         return "get" + Character.toUpperCase(name.charAt(0)) + name.substring(1);
@@ -47,7 +47,7 @@ class ReflectionUtil {
 
     static String getBooleanGetterName(String name) {
         if (name.length() < 1) {
-            throw new IllegalArgumentException("Field name too short '" + name + "'");
+            throw new IllegalArgumentException("Field name too short '" + name + "'.");
         }
 
         return "is" + Character.toUpperCase(name.charAt(0)) + name.substring(1);
@@ -136,27 +136,27 @@ class ReflectionUtil {
                 break;
             }
 
-            Field[] fields = clazz.getDeclaredFields();
-
-            for (Field field: fields) {
-                result.add(field.getName());
+            for (Field field : clazz.getDeclaredFields()) {
+                if (field.getAnnotation(Transient.class) == null) {
+                    result.add(field.getName());
+                }
             }
 
-            Method[] methods = clazz.getDeclaredMethods();
-
-            for (Method method : methods) {
+            for (Method method : clazz.getDeclaredMethods()) {
                 String name = method.getName();
 
-                if (name.startsWith("get") || name.startsWith("set")) {
-                    if (name.length() > 3) {
-                        result.add(Character.toLowerCase(name.charAt(3)) + name.substring(4));
-                    }
+                if (name.length() > 3 && (name.startsWith("get") || name.startsWith("set"))
+                        && Character.isUpperCase(name.charAt(3))) {
+                    String fieldName = Character.toLowerCase(name.charAt(3))
+                            + (name.length() > 4 ? name.substring(4) : "");
+                    result.add(fieldName);
                 }
 
-                if (name.startsWith("is")) {
-                    if (name.length() > 2) {
-                        result.add(Character.toLowerCase(name.charAt(2)) + name.substring(3));
-                    }
+                if (name.length() > 2 && name.startsWith("is")
+                        && Character.isUpperCase(name.charAt(2))) {
+                    String fieldName = Character.toLowerCase(name.charAt(2))
+                            + (name.length() > 3 ? name.substring(3) : "");
+                    result.add(fieldName);
                 }
             }
 
@@ -174,10 +174,9 @@ class ReflectionUtil {
                 break;
             }
 
-            Field[] fields = clazz.getDeclaredFields();
-
-            for (Field field: fields) {
-                if (!result.containsKey(field.getName())) {
+            for (Field field : clazz.getDeclaredFields()) {
+                if (!result.containsKey(field.getName())
+                        && field.getAnnotation(Transient.class) == null) {
                     result.put(field.getName(), field);
                 }
             }
@@ -191,9 +190,7 @@ class ReflectionUtil {
     private static ReflectionFindResult<FastMethod> findMappedClassMethod(Class<?> clazz, String method) {
         FastClass fastClazz = getFastClass(clazz);
 
-        Method[] clazzMethods = clazz.getDeclaredMethods();
-
-        for (Method clazzMethod : clazzMethods) {
+        for (Method clazzMethod : clazz.getDeclaredMethods()) {
             if (clazzMethod.getName().equals(method)) {
                 return new ReflectionFindResult<FastMethod>(fastClazz.getMethod(clazzMethod),
                         false);
