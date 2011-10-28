@@ -99,7 +99,7 @@ public class Jacuzzi {
         } finally {
             try {
                 connection.setAutoCommit(true);
-            } catch (SQLException e) {
+            } catch (SQLException ignored) {
                 // No operations.
             }
             detachConnection();
@@ -116,11 +116,11 @@ public class Jacuzzi {
         try {
             connection.rollback();
         } catch (SQLException e) {
-            throw new DatabaseException("Engine doesn't support transactions or connection is closed.");
+            throw new DatabaseException("Engine doesn't support transactions or connection is closed.", e);
         } finally {
             try {
                 connection.setAutoCommit(true);
-            } catch (SQLException e) {
+            } catch (SQLException ignored) {
                 // No operations.
             }
             detachConnection();
@@ -158,13 +158,13 @@ public class Jacuzzi {
         try {
             List<Row> generated = new LinkedList<Row>();
             int count = PreparedStatementUtil.execute(dataSource, dataSourceUtil, query, args, generated);
-            if (generated.size() == 0) {
+            if (generated.isEmpty()) {
                 List<Row> generatedKeys = new ArrayList<Row>(1);
                 generatedKeys.add(new Row());
                 return new InsertResult(count, generatedKeys);
             } else {
                 if (generated.size() > 1) {
-                    throw new DatabaseException("Unexpected generated key size " + generated.size() + ".");
+                    throw new DatabaseException("Unexpected generated key size " + generated.size() + '.');
                 }
                 return new InsertResult(count, generated);
             }
@@ -339,8 +339,9 @@ public class Jacuzzi {
      */
     private static final ThreadLocal<Map<DataSource, Jacuzzi>> threadCache = new ThreadLocal<Map<DataSource, Jacuzzi>>() {
         /**
-         * @return Map<DataSource, Jacuzzi> Creates empty map.
+         * @return {@code Map&lt;DataSource, Jacuzzi&gt;} Creates empty map.
          */
+        @Override
         protected Map<DataSource, Jacuzzi> initialValue() {
             return new HashMap<DataSource, Jacuzzi>();
         }
@@ -376,7 +377,7 @@ public class Jacuzzi {
 
     public static class InsertResult {
         private int count;
-        private List<Row> generatedKeys;
+        private final List<Row> generatedKeys;
 
         private InsertResult(int count, List<Row> generatedKeys) {
             this.count = count;
@@ -400,7 +401,7 @@ public class Jacuzzi {
         }
 
         public List<Row> getGeneratedKeys() {
-            return generatedKeys;
+            return Collections.unmodifiableList(generatedKeys);
         }
     }
 }
