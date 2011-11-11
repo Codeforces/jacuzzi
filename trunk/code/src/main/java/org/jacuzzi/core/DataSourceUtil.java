@@ -16,7 +16,9 @@ import java.sql.SQLException;
  * @author Mike Mirzayanov
  */
 class DataSourceUtil {
-    /** Attached connection per thread. */
+    /**
+     * Attached connection per thread.
+     */
     private static final ThreadLocal<Connection> attachedConnection = new ThreadLocal<Connection>();
 
     /**
@@ -25,7 +27,9 @@ class DataSourceUtil {
      */
     private static final ThreadLocal<Long> attachExpirationTime = new ThreadLocal<Long>();
 
-    /** Default lease time. */
+    /**
+     * Default lease time.
+     */
     private static final long LEASE_TIME = /*10000;*/ Integer.MAX_VALUE;
 
     /**
@@ -33,9 +37,16 @@ class DataSourceUtil {
      * Starting from the call Jacuzzi will operate with
      * single JDBC connection. Use detachConnection() to
      * detach it.
+     *
+     * @param dataSource DataSource to get new connection.
      */
-    public synchronized void attachConnection() {
+    public void attachConnection(DataSource dataSource) {
         if (!isConnectionAttached()) {
+            try {
+                attachedConnection.set(dataSource.getConnection());
+            } catch (SQLException e) {
+                throw new DatabaseException("Can't get connection from DataSource instance.", e);
+            }
             attachExpirationTime.set(System.currentTimeMillis() + LEASE_TIME);
         }
     }
@@ -44,22 +55,23 @@ class DataSourceUtil {
         return attachExpirationTime.get() != null;
     }
 
-    /** Detaches connection from the current thread. */
-    public synchronized void detachConnection() {
+    /**
+     * Detaches connection from the current thread.
+     */
+    public void detachConnection() {
         if (!isConnectionAttached()) {
             throw new DatabaseException("detachConnection() called but attached connection not found.");
         }
 
         long expTime = attachExpirationTime.get();
-
         if (expTime < System.currentTimeMillis()) {
             throw new DatabaseException("Attached connection expired. You shouldn't do such long attachments.");
         }
 
         Connection connection = attachedConnection.get();
 
-        attachedConnection.remove();
         attachExpirationTime.remove();
+        attachedConnection.remove();
 
         closeConnection(connection);
     }
@@ -73,19 +85,11 @@ class DataSourceUtil {
         try {
             if (isConnectionAttached()) {
                 long expTime = attachExpirationTime.get();
-
                 if (System.currentTimeMillis() > expTime) {
                     throw new DatabaseException("Attached connection expired. You shouldn't do such long attachments.");
                 }
 
-                Connection result = attachedConnection.get();
-
-                if (result == null) {
-                    result = dataSource.getConnection();
-                    attachedConnection.set(result);
-                }
-
-                return result;
+                return attachedConnection.get();
             } else {
                 if (expectAttached) {
                     throw new DatabaseException("Connection not attached.");
@@ -103,7 +107,7 @@ class DataSourceUtil {
      * @return Connection Finds new connection. If connection has been attached, then it returns one connection
      *         each call before detachConnection().
      */
-    public synchronized Connection getConnection(DataSource dataSource) {
+    public Connection getConnection(DataSource dataSource) {
         return getConnection(dataSource, false);
     }
 
@@ -111,16 +115,16 @@ class DataSourceUtil {
      * @param dataSource of type DataSource
      * @return Connection Returns attached connection or throws DatabaseException if it doesn't attached.
      */
-    public synchronized Connection getAttachedConnection(DataSource dataSource) {
+    public Connection getAttachedConnection(DataSource dataSource) {
         return getConnection(dataSource, true);
     }
 
     /**
-     * Use it to close connection safely. Don't use connection.close(). 
+     * Use it to close connection safely. Don't use connection.close().
      *
      * @param connection of type Connection
      */
-    public synchronized void closeConnection(Connection connection) {
+    public void closeConnection(Connection connection) {
         if (!isConnectionAttached()) {
             try {
                 connection.close();
