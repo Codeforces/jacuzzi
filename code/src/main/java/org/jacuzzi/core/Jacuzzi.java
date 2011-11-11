@@ -43,7 +43,7 @@ public class Jacuzzi {
      * detach it.
      */
     public void attachConnection() {
-        dataSourceUtil.attachConnection();
+        dataSourceUtil.attachConnection(dataSource);
     }
 
     /**
