@@ -6,8 +6,16 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-/** @author Mike Mirzayanov */
+/**
+ * @author Mike Mirzayanov
+ */
 class PreparedStatementUtil {
+    private static final boolean PRINT_QUERY_TIMES = "true".equals(System.getProperty("jacuzzi.printQueryTimes"));
+    private static final String PRINT_QUERY_TIMES_THRESHOLD_AS_STRING =
+            System.getProperty("jacuzzi.printQueryTimesThreshold");
+    private static final long PRINT_QUERY_TIMES_THRESHOLD = Math.max(50L,
+            PRINT_QUERY_TIMES_THRESHOLD_AS_STRING == null ? 0L : Long.parseLong(PRINT_QUERY_TIMES_THRESHOLD_AS_STRING));
+
     private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
         @Override
         protected SimpleDateFormat initialValue() {
@@ -16,6 +24,38 @@ class PreparedStatementUtil {
     };
 
     private static final int MAX_RETRY_COUNT = 10;
+
+    private static ResultSet prepatedStatementExecuteQuery(PreparedStatement statement, String query) throws SQLException {
+        if (!PRINT_QUERY_TIMES) {
+            return statement.executeQuery();
+        } else {
+            long before = System.currentTimeMillis();
+            try {
+                return statement.executeQuery();
+            } finally {
+                long duration = System.currentTimeMillis() - before;
+                if (duration > PRINT_QUERY_TIMES_THRESHOLD) {
+                    System.out.println("[" + new Date() + "] QUERY_TIME [" + query + "]: " + duration + " ms.");
+                }
+            }
+        }
+    }
+
+    private static int preparedQueryExecuteUpdate(PreparedStatement statement, String query) throws SQLException {
+        if (!PRINT_QUERY_TIMES) {
+            return statement.executeUpdate();
+        } else {
+            long before = System.currentTimeMillis();
+            try {
+                return statement.executeUpdate();
+            } finally {
+                long duration = System.currentTimeMillis() - before;
+                if (duration > PRINT_QUERY_TIMES_THRESHOLD) {
+                    System.out.println("[" + new Date() + "] QUERY_TIME [" + query + "]: " + duration + " ms.");
+                }
+            }
+        }
+    }
 
     static List<Row> findRows(final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object... args) throws SQLException {
         return runAndReturn(new Invokable<List<Row>>() {
@@ -34,7 +74,7 @@ class PreparedStatementUtil {
             statement = getPreparedStatement(query, connection);
 
             setupPreparedStatementParameters(statement, args);
-            ResultSet resultSet = statement.executeQuery();
+            ResultSet resultSet = prepatedStatementExecuteQuery(statement, query);
             statement.clearParameters();
 
             return Row.readFromResultSet(resultSet);
@@ -62,7 +102,7 @@ class PreparedStatementUtil {
             try {
                 statement = getPreparedStatement(query, connection);
                 setupPreparedStatementParameters(statement, args);
-                int result = statement.executeUpdate();
+                int result = preparedQueryExecuteUpdate(statement, query);
                 if (generatedKeys != null) {
                     generatedKeys.addAll(Row.readFromResultSet(statement.getGeneratedKeys()));
                 }
@@ -93,7 +133,7 @@ class PreparedStatementUtil {
             statement = getPreparedStatement(query, connection);
 
             setupPreparedStatementParameters(statement, args);
-            ResultSet resultSet = statement.executeQuery();
+            ResultSet resultSet = prepatedStatementExecuteQuery(statement, query);
             statement.clearParameters();
 
             return Row.readFirstFromResultSet(resultSet);
@@ -120,7 +160,7 @@ class PreparedStatementUtil {
             statement = getPreparedStatement(query, connection);
             setupPreparedStatementParameters(statement, args);
 
-            ResultSet resultSet = statement.executeQuery();
+            ResultSet resultSet = prepatedStatementExecuteQuery(statement, query);
 
             int columnCount = resultSet.getMetaData().getColumnCount();
             if (columnCount != 1) {
@@ -190,7 +230,7 @@ class PreparedStatementUtil {
         return connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
     }
 
-    public static<T> T runAndReturn(Invokable<T> invokable) throws SQLException {
+    public static <T> T runAndReturn(Invokable<T> invokable) throws SQLException {
         SQLRecoverableException exception = null;
 
         for (int i = 0; i < MAX_RETRY_COUNT; i++) {
@@ -199,7 +239,7 @@ class PreparedStatementUtil {
             } catch (SQLRecoverableException e) {
                 exception = e;
                 try {
-                    Thread.sleep((i + 1) * 1000L);
+                    Thread.sleep(i * i * 100L);
                 } catch (InterruptedException ignored) {
                     // No operations.
                 }
