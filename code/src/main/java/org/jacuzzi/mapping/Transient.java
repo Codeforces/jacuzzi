@@ -9,6 +9,6 @@ import java.lang.annotation.Target;
  * @author Mike Mirzayanov
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.TYPE})
+@Target({ElementType.METHOD, ElementType.FIELD, ElementType.TYPE})
 public @interface Transient {
 }
