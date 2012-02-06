@@ -143,20 +143,22 @@ class ReflectionUtil {
             }
 
             for (Method method : clazz.getDeclaredMethods()) {
-                String name = method.getName();
+                if (method.getAnnotation(Transient.class) == null) {
+                    String name = method.getName();
 
-                if (name.length() > 3 && (name.startsWith("get") || name.startsWith("set"))
-                        && Character.isUpperCase(name.charAt(3))) {
-                    String fieldName = Character.toLowerCase(name.charAt(3))
-                            + (name.length() > 4 ? name.substring(4) : "");
-                    result.add(fieldName);
-                }
+                    if (name.length() > 3 && (name.startsWith("get") || name.startsWith("set"))
+                            && Character.isUpperCase(name.charAt(3))) {
+                        String fieldName = Character.toLowerCase(name.charAt(3))
+                                + (name.length() > 4 ? name.substring(4) : "");
+                        result.add(fieldName);
+                    }
 
-                if (name.length() > 2 && name.startsWith("is")
-                        && Character.isUpperCase(name.charAt(2))) {
-                    String fieldName = Character.toLowerCase(name.charAt(2))
-                            + (name.length() > 3 ? name.substring(3) : "");
-                    result.add(fieldName);
+                    if (name.length() > 2 && name.startsWith("is")
+                            && Character.isUpperCase(name.charAt(2))) {
+                        String fieldName = Character.toLowerCase(name.charAt(2))
+                                + (name.length() > 3 ? name.substring(3) : "");
+                        result.add(fieldName);
+                    }
                 }
             }
 
