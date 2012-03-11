@@ -10,12 +10,13 @@ class Query {
      *  ?t: table name
      *
      * @param query String with jokers
-     * @param args Parametersto be substituted instead of jokers
+     * @param args Parameters to be substituted instead of jokers
      * @return {@code query} with substitutions.
      */
+    @SuppressWarnings("AccessOfSystemProperties")
     public static String format(String query, Object ... args) {
-        boolean tableQuotation = "true".equals(System.getProperty("jacuzzi.tableQuotation"));
-        boolean fieldQuotation = "true".equals(System.getProperty("jacuzzi.fieldQuotation"));
+        boolean tableQuotation = Boolean.parseBoolean(System.getProperty("jacuzzi.tableQuotation"));
+        boolean fieldQuotation = Boolean.parseBoolean(System.getProperty("jacuzzi.fieldQuotation"));
 
         StringBuilder result = new StringBuilder(query.length() + 32);
         int index = 0;
