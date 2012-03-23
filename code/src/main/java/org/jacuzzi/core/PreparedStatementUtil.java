@@ -1,5 +1,7 @@
 package org.jacuzzi.core;
 
+import org.apache.log4j.Logger;
+
 import javax.sql.DataSource;
 import java.sql.*;
 import java.text.SimpleDateFormat;
@@ -10,11 +12,17 @@ import java.util.List;
  * @author Mike Mirzayanov
  */
 class PreparedStatementUtil {
-    private static final boolean PRINT_QUERY_TIMES = "true".equals(System.getProperty("jacuzzi.printQueryTimes"));
-    private static final String PRINT_QUERY_TIMES_THRESHOLD_AS_STRING =
-            System.getProperty("jacuzzi.printQueryTimesThreshold");
-    private static final long PRINT_QUERY_TIMES_THRESHOLD = Math.max(50L,
-            PRINT_QUERY_TIMES_THRESHOLD_AS_STRING == null ? 0L : Long.parseLong(PRINT_QUERY_TIMES_THRESHOLD_AS_STRING));
+    private static final Logger logger = Logger.getLogger(PreparedStatementUtil.class);
+    
+    private static final boolean LOG_SLOW_QUERIES = !"false".equals(System.getProperty("jacuzzi.logSlowQueries"));
+    
+    private static final String LOG_SLOW_QUERIES_THRESHOLD_STRING =
+            System.getProperty("jacuzzi.logSlowQueriesThreshold");
+    
+    private static final long PRINT_QUERY_TIMES_THRESHOLD = Math.max(
+            50L,
+            LOG_SLOW_QUERIES_THRESHOLD_STRING == null ? 250L : Long.parseLong(LOG_SLOW_QUERIES_THRESHOLD_STRING)
+    );
 
     private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
         @Override
@@ -25,8 +33,8 @@ class PreparedStatementUtil {
 
     private static final int MAX_RETRY_COUNT = 10;
 
-    private static ResultSet prepatedStatementExecuteQuery(PreparedStatement statement, String query) throws SQLException {
-        if (!PRINT_QUERY_TIMES) {
+    private static ResultSet preparedStatementExecuteQuery(PreparedStatement statement, String query) throws SQLException {
+        if (!LOG_SLOW_QUERIES) {
             return statement.executeQuery();
         } else {
             long before = System.currentTimeMillis();
@@ -35,14 +43,14 @@ class PreparedStatementUtil {
             } finally {
                 long duration = System.currentTimeMillis() - before;
                 if (duration > PRINT_QUERY_TIMES_THRESHOLD) {
-                    System.out.println("[" + new Date() + "] QUERY_TIME [" + query + "]: " + duration + " ms.");
+                    logger.warn("Query \"" + query + "\" takes " + duration + " ms.");
                 }
             }
         }
     }
 
     private static int preparedQueryExecuteUpdate(PreparedStatement statement, String query) throws SQLException {
-        if (!PRINT_QUERY_TIMES) {
+        if (!LOG_SLOW_QUERIES) {
             return statement.executeUpdate();
         } else {
             long before = System.currentTimeMillis();
@@ -51,7 +59,7 @@ class PreparedStatementUtil {
             } finally {
                 long duration = System.currentTimeMillis() - before;
                 if (duration > PRINT_QUERY_TIMES_THRESHOLD) {
-                    System.out.println("[" + new Date() + "] QUERY_TIME [" + query + "]: " + duration + " ms.");
+                    logger.warn("Query \"" + query + "\" takes " + duration + " ms.");
                 }
             }
         }
@@ -74,7 +82,7 @@ class PreparedStatementUtil {
             statement = getPreparedStatement(query, connection);
 
             setupPreparedStatementParameters(statement, args);
-            ResultSet resultSet = prepatedStatementExecuteQuery(statement, query);
+            ResultSet resultSet = preparedStatementExecuteQuery(statement, query);
             statement.clearParameters();
 
             return Row.readFromResultSet(resultSet);
@@ -133,7 +141,7 @@ class PreparedStatementUtil {
             statement = getPreparedStatement(query, connection);
 
             setupPreparedStatementParameters(statement, args);
-            ResultSet resultSet = prepatedStatementExecuteQuery(statement, query);
+            ResultSet resultSet = preparedStatementExecuteQuery(statement, query);
             statement.clearParameters();
 
             return Row.readFirstFromResultSet(resultSet);
@@ -160,7 +168,7 @@ class PreparedStatementUtil {
             statement = getPreparedStatement(query, connection);
             setupPreparedStatementParameters(statement, args);
 
-            ResultSet resultSet = prepatedStatementExecuteQuery(statement, query);
+            ResultSet resultSet = preparedStatementExecuteQuery(statement, query);
 
             int columnCount = resultSet.getMetaData().getColumnCount();
             if (columnCount != 1) {
@@ -169,7 +177,6 @@ class PreparedStatementUtil {
             }
 
             Object result = null;
-
             if (resultSet.next()) {
                 result = resultSet.getObject(1);
             }
@@ -180,7 +187,6 @@ class PreparedStatementUtil {
             }
 
             resultSet.close();
-
             statement.clearParameters();
 
             return result;
