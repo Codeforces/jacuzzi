@@ -400,22 +400,15 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
                 while (clazz != null) {
                     Type genericSuperclass = clazz.getGenericSuperclass();
 
-                    if (genericSuperclass instanceof ParameterizedType
-                            && ((ParameterizedType) genericSuperclass).getActualTypeArguments().length == 2) {
+                    if (genericSuperclass instanceof ParameterizedType) {
                         Type type = ((ParameterizedType) genericSuperclass).getActualTypeArguments()[0];
-                        if (type instanceof Class) {
-                            return typeClass = (Class<T>) type;
-                        } else {
-                            throw new DatabaseException("DAO implementation should have an ancestor"
-                                    + " with exactly two generic parameters: T, K.");
-                        }
+                        return typeClass = (Class<T>) type;
                     }
 
                     clazz = clazz.getSuperclass();
                 }
 
-                throw new DatabaseException("DAO implementation should have an ancestor"
-                        + " with exactly two generic parameters: T, K.");
+                throw new DatabaseException("DAO implementation should have an ancestor with generic parameter T.");
             }
 
             return typeClass;
