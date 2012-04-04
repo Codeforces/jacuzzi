@@ -4,22 +4,29 @@ import javax.sql.DataSource;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
 /**
  * @author Mike Mirzayanov
  */
-public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
-    private static final Pattern STARTS_WITH_SELECT_PATTERN =
-            Pattern.compile("[\\s]*SELECT[\\s]+.*", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+@SuppressWarnings("AbstractClassWithoutAbstractMethods")
+public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
+    private static final Pattern STARTS_WITH_SELECT_PATTERN
+            = Pattern.compile("[\\s]*SELECT[\\s]+.*", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern STARTS_WITH_WHERE_PATTERN =
-            Pattern.compile("[\\s]*WHERE[\\s]+.*", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+    private static final Pattern STARTS_WITH_WHERE_PATTERN
+            = Pattern.compile("[\\s]*WHERE[\\s]+.*", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
     private final Jacuzzi jacuzzi;
     private final TypeOracle<T> typeOracle;
+
     private Class<T> typeClass;
+    private final Lock typeClassLock = new ReentrantLock();
+
     private Class<K> keyClass;
+    private final Lock keyClassLock = new ReentrantLock();
 
     protected Jacuzzi getJacuzzi() {
         return jacuzzi;
@@ -81,7 +88,7 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         }
 
         throw new IllegalStateException("There are more than one row this the same id " +
-                id + " for " + typeClass + '.');
+                id + " for " + getTypeClass() + '.');
     }
 
     @Override
@@ -153,7 +160,7 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         }
 
         throw new MappingException("There are more than one instance of " +
-                typeClass + " with id = " + typeOracle.getIdValue(object) + '.');
+                getTypeClass() + " with id = " + typeOracle.getIdValue(object) + '.');
     }
 
     @Override
@@ -324,8 +331,8 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         }
 
         String idColumn = typeOracle.getIdColumn();
-        StringBuilder query = new StringBuilder(Query.format("DELETE FROM ?t WHERE ?f = ?", typeOracle.getTableName(), idColumn));
-        if (1 != jacuzzi.execute(query.toString(), id)) {
+        String query = Query.format("DELETE FROM ?t WHERE ?f = ?", typeOracle.getTableName(), idColumn);
+        if (jacuzzi.execute(query, id) != 1) {
             throw new DatabaseException("Can't delete instance of class " + getKeyClass().getName()
                     + " with id " + id + '.');
         }
@@ -384,29 +391,70 @@ public class GenericDaoImpl<T, K> implements GenericDao<T, K> {
     }
 
     @SuppressWarnings({"unchecked"})
-    protected synchronized Class<T> getTypeClass() {
-        Class<?> clazz = this.getClass();
+    protected final Class<T> getTypeClass() {
+        typeClassLock.lock();
+        try {
+            if (typeClass == null) {
+                Class clazz = this.getClass();
 
-        while (typeClass == null) {
-            Type superClazz = clazz.getGenericSuperclass();
+                while (clazz != null) {
+                    Type genericSuperclass = clazz.getGenericSuperclass();
 
-            if (superClazz instanceof ParameterizedType) {
-                ParameterizedType type = (ParameterizedType) superClazz;
-                typeClass = (Class<T>) type.getActualTypeArguments()[0];
+                    if (genericSuperclass instanceof ParameterizedType
+                            && ((ParameterizedType) genericSuperclass).getActualTypeArguments().length == 2) {
+                        Type type = ((ParameterizedType) genericSuperclass).getActualTypeArguments()[0];
+                        if (type instanceof Class) {
+                            return typeClass = (Class<T>) type;
+                        } else {
+                            throw new DatabaseException("DAO implementation should have an ancestor"
+                                    + " with exactly two generic parameters: T, K.");
+                        }
+                    }
+
+                    clazz = clazz.getSuperclass();
+                }
+
+                throw new DatabaseException("DAO implementation should have an ancestor"
+                        + " with exactly two generic parameters: T, K.");
             }
-            clazz = clazz.getSuperclass();
-        }
 
-        return typeClass;
+            return typeClass;
+        } finally {
+            typeClassLock.unlock();
+        }
     }
 
     @SuppressWarnings({"unchecked"})
-    protected synchronized Class<K> getKeyClass() {
-        if (keyClass == null) {
-            ParameterizedType type = (ParameterizedType) this.getClass().getGenericSuperclass();
-            keyClass = (Class<K>) type.getActualTypeArguments()[1];
-        }
+    protected final Class<K> getKeyClass() {
+        keyClassLock.lock();
+        try {
+            if (keyClass == null) {
+                Class clazz = this.getClass();
 
-        return keyClass;
+                while (clazz != null) {
+                    Type genericSuperclass = clazz.getGenericSuperclass();
+
+                    if (genericSuperclass instanceof ParameterizedType
+                            && ((ParameterizedType) genericSuperclass).getActualTypeArguments().length == 2) {
+                        Type type = ((ParameterizedType) genericSuperclass).getActualTypeArguments()[1];
+                        if (type instanceof Class) {
+                            return keyClass = (Class<K>) type;
+                        } else {
+                            throw new DatabaseException("DAO implementation should have an ancestor"
+                                    + " with exactly two generic parameters: T, K.");
+                        }
+                    }
+
+                    clazz = clazz.getSuperclass();
+                }
+
+                throw new DatabaseException("DAO implementation should have an ancestor"
+                        + " with exactly two generic parameters: T, K.");
+            }
+
+            return keyClass;
+        } finally {
+            keyClassLock.unlock();
+        }
     }
 }
