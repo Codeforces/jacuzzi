@@ -122,7 +122,7 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         }
 
         if (instanceCount > 1 && throwIfNotUnique) {
-            throw new DatabaseException("Too many instances of " + getKeyClass().getSimpleName() + " returned by \"" + query + "\".");
+            throw new DatabaseException("Too many instances of " + getTypeClass().getSimpleName() + " returned by \"" + query + "\".");
         }
 
         return instances.get(0);
@@ -187,7 +187,7 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
             }
         } else {
             throw new DatabaseException(
-                    "Can't insert row into " + getTableName() + " for class " + getKeyClass().getName() + '.'
+                    "Can't insert row into " + getTableName() + " for class " + getTypeClass().getName() + '.'
             );
         }
     }
@@ -246,7 +246,7 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
 
         if (result.getCount() != objects.size()) {
             throw new DatabaseException(
-                    "Can't insert multiple rows into " + getTableName() + " for class " + getKeyClass().getName() + '.'
+                    "Can't insert multiple rows into " + getTableName() + " for class " + getTypeClass().getName() + '.'
             );
         }
 
@@ -286,7 +286,7 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         arguments[arguments.length - 1] = typeOracle.getIdValue(object);
 
         if (jacuzzi.execute(query.toString(), arguments) != 1) {
-            throw new DatabaseException("Can't update instance of class " + getKeyClass().getName()
+            throw new DatabaseException("Can't update instance of class " + getTypeClass().getName()
                     + " with id " + typeOracle.getIdValue(object) + '.');
         }
     }
@@ -333,7 +333,7 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         String idColumn = typeOracle.getIdColumn();
         String query = Query.format("DELETE FROM ?t WHERE ?f = ?", typeOracle.getTableName(), idColumn);
         if (jacuzzi.execute(query, id) != 1) {
-            throw new DatabaseException("Can't delete instance of class " + getKeyClass().getName()
+            throw new DatabaseException("Can't delete instance of class " + getTypeClass().getName()
                     + " with id " + id + '.');
         }
     }
@@ -376,7 +376,7 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
 
         if (ids.size() != jacuzzi.execute(query.toString(), idValues)) {
             throw new DatabaseException(
-                    "Can't delete multiple instances of class " + getKeyClass().getName() + '.'
+                    "Can't delete multiple instances of class " + getTypeClass().getName() + '.'
             );
         }
     }
