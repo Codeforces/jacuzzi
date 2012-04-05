@@ -2,6 +2,7 @@ package org.jacuzzi.core;
 
 import net.sf.cglib.reflect.FastClass;
 import net.sf.cglib.reflect.FastMethod;
+import org.apache.log4j.Logger;
 import org.jacuzzi.mapping.Id;
 import org.jacuzzi.mapping.MappedTo;
 
@@ -12,76 +13,78 @@ import java.util.*;
  * @author Mike Mirzayanov
  */
 class TypeOracleImpl<T> extends TypeOracle<T> {
-    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
+    private static final Logger logger = Logger.getLogger(TypeOracleImpl.class);
 
-    private FastClass fastClazz;
+    private static final Object[] EMPTY_OBJECT_ARRAY = {};
+
     private final Class<T> clazz;
-    private List<Field> fields;
-    private Map<String, Field> fieldsByColumns;
-    private Field idField;
-    private String tableName;
+    private final FastClass fastClazz;
+    private final List<Field> fields;
+    private final Map<String, Field> fieldByColumn;
+    private final Field idField;
+    private final String tableName;
 
-    private synchronized void ensureMapping() {
-        if (fields == null) {
-            //System.out.println("ensureMapping");
-            fields = new ArrayList<Field>();
-            fieldsByColumns = new HashMap<String, Field>();
-            fastClazz = FastClass.create(clazz);
+    @SuppressWarnings("OverlyLongMethod")
+    TypeOracleImpl(Class<T> clazz) {
+        this.clazz = clazz;
 
-            if (clazz.getAnnotation(MappedTo.class) != null) {
-                tableName = clazz.getAnnotation(MappedTo.class).value();
-            } else {
-                tableName = clazz.getSimpleName();
+        fastClazz = FastClass.create(clazz);
+        List<Field> internalFields = new ArrayList<Field>();
+        Map<String, Field> internalFieldByColumn = new HashMap<String, Field>();
+
+        if (clazz.getAnnotation(MappedTo.class) == null) {
+            tableName = clazz.getSimpleName();
+        } else {
+            tableName = clazz.getAnnotation(MappedTo.class).value();
+        }
+
+        String[] fieldNames = ReflectionUtil.findFields(clazz);
+        Map<String, java.lang.reflect.Field> fieldsMap = ReflectionUtil.findFieldsMap(clazz);
+        Field internalIdField = null;
+
+        for (String fieldName : fieldNames) {
+            Field field = new Field(fieldName);
+
+            field.setSetter(ReflectionUtil.findSetter(clazz, fieldName));
+            field.setGetter(ReflectionUtil.findGetter(clazz, fieldName));
+
+            boolean isId = false;
+            String column = fieldName;
+            if (fieldsMap.containsKey(fieldName)) {
+                MappedTo mappedTo = fieldsMap.get(fieldName).getAnnotation(MappedTo.class);
+                if (mappedTo != null) {
+                    column = mappedTo.value();
+                }
+                isId = fieldsMap.get(fieldName).getAnnotation(Id.class) != null;
             }
+            field.setColumn(column);
 
-            String[] fieldNames = ReflectionUtil.findFields(clazz);
-            Map<String, java.lang.reflect.Field> fieldsMap = ReflectionUtil.findFieldsMap(clazz);
-
-            for (String fieldName : fieldNames) {
-                Field field = new Field(fieldName);
-
-                field.setSetter(ReflectionUtil.findSetter(clazz, fieldName));
-                field.setGetter(ReflectionUtil.findGetter(clazz, fieldName));
-
-                boolean isId = false;
-                String column = fieldName;
-                if (fieldsMap.containsKey(fieldName)) {
-                    MappedTo mappedTo = fieldsMap.get(fieldName).getAnnotation(MappedTo.class);
-                    if (mappedTo != null) {
-                        column = mappedTo.value();
-                    }
-                    isId = fieldsMap.get(fieldName).getAnnotation(Id.class) != null;
+            if (field.isValid()) {
+                if (!isId) {
+                    isId = field.getSetter().getJavaMethod().getAnnotation(Id.class) != null;
+                    isId = isId || field.getSetter().getJavaMethod().getAnnotation(Id.class) != null;
                 }
-                field.setColumn(column);
 
-                if (field.isValid()) {
-                    if (!isId) {
-                        isId = field.getSetter().getJavaMethod().getAnnotation(Id.class) != null;
-                        isId = isId || field.getSetter().getJavaMethod().getAnnotation(Id.class) != null;
-                    }
-                    field.setId(isId);
-                    if (isId) {
-                        idField = field;
-                    }
+                field.setId(isId);
 
-                    fields.add(field);
-                    fieldsByColumns.put(field.getColumn(), field);
+                if (isId) {
+                    internalIdField = field;
                 }
+
+                internalFields.add(field);
+                internalFieldByColumn.put(field.getColumn(), field);
             }
         }
-    }
 
-    TypeOracleImpl(Class<T> clazz) {
-        //System.out.println("TypeOracleImpl created!");
-        this.clazz = clazz;
+        idField = internalIdField;
+        fields = Collections.unmodifiableList(internalFields);
+        fieldByColumn = Collections.unmodifiableMap(internalFieldByColumn);
     }
 
     @Override
     public String getIdColumn() {
-        ensureMapping();
-
         if (idField == null) {
-            throw new MappingException("Can't find Id for class " + clazz + '.');
+            throw new MappingException("Can't find ID for class " + clazz + '.');
         }
 
         return idField.getColumn();
@@ -89,15 +92,11 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
 
     @Override
     public String getTableName() {
-        ensureMapping();
-
         return tableName;
     }
 
     @Override
     public String getQuerySetSql() {
-        ensureMapping();
-
         if (fields.isEmpty()) {
             throw new MappingException("Nothing to set for class " + clazz + '.');
         }
@@ -114,8 +113,6 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
 
     @Override
     public String getFieldList(boolean includeId, boolean useTablePrefix) {
-        ensureMapping();
-
         if (fields.isEmpty()) {
             throw new MappingException("Nothing to set for class " + clazz + '.');
         }
@@ -141,8 +138,6 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
 
     @Override
     public String getValuesPatternListForInsert(boolean includeId, T instance) {
-        ensureMapping();
-
         if (fields.isEmpty()) {
             throw new MappingException("Nothing to set for class " + clazz + '.');
         }
@@ -189,8 +184,6 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
     @Override
     @SuppressWarnings({"RedundantIfStatement"})
     public boolean hasReasonableId(T instance) {
-        ensureMapping();
-
         Object id = getIdValue(instance);
         if (id == null) {
             return false;
@@ -217,8 +210,6 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
 
     @Override
     public Object[] getQuerySetArguments(T instance) {
-        ensureMapping();
-
         if (fields.isEmpty()) {
             throw new MappingException("Nothing to set for class " + clazz + '.');
         }
@@ -240,8 +231,6 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
 
     @Override
     public Object getIdValue(T instance) {
-        ensureMapping();
-
         if (idField == null) {
             throw new MappingException("Can't find id field for class " + clazz + '.');
         }
@@ -256,8 +245,6 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
     @Override
     @SuppressWarnings({"unchecked"})
     public T newInstance() {
-        ensureFastClazz();
-
         T instance;
 
         try {
@@ -269,15 +256,8 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         return instance;
     }
 
-    private synchronized void ensureFastClazz() {
-        if (fastClazz == null) {
-            fastClazz = FastClass.create(clazz);
-        }
-    }
-
     @Override
     public void setIdValue(T instance, Object value) {
-        ensureMapping();
         try {
             idField.getSetter().invoke(instance, new Object[]{value});
         } catch (InvocationTargetException e) {
@@ -288,19 +268,17 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
 
     @Override
     public T convertFromRow(Row row) {
-        ensureMapping();
-
         Set<String> columns = row.keySet();
         T instance = newInstance();
 
-        Map<String, String> columnNames = new HashMap<String, String>();
-        for (String column : fieldsByColumns.keySet()) {
-            columnNames.put(column.toLowerCase(), column);
+        Map<String, String> columnNameByLowercaseColumnName = new HashMap<String, String>();
+        for (String column : fieldByColumn.keySet()) {
+            columnNameByLowercaseColumnName.put(column.toLowerCase(), column);
         }
 
         for (String column : columns) {
-            if (columnNames.containsKey(column.toLowerCase())) {
-                Field field = fieldsByColumns.get(columnNames.get(column.toLowerCase()));
+            if (columnNameByLowercaseColumnName.containsKey(column.toLowerCase())) {
+                Field field = fieldByColumn.get(columnNameByLowercaseColumnName.remove(column.toLowerCase()));
                 try {
                     Object parameter = row.get(column);
                     Class<?> expectedParameterType = field.getSetter().getParameterTypes()[0];
@@ -308,13 +286,31 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
                     field.getSetter().invoke(instance, new Object[]{castedParameter});
                 } catch (InvocationTargetException e) {
                     if (row.get(column) != null) {
-                        throw new MappingException("Can't invoke setter " + field.getSetter() + "[clazz=" +
-                                clazz.getName() + "] for parameter " + row.get(column).getClass() + '.', e);
+                        throw new MappingException("Can't invoke setter " + field.getSetter() + "[clazz="
+                                + clazz.getName() + "] for parameter " + row.get(column).getClass() + '.', e);
                     } else {
-                        throw new MappingException("Can't invoke setter " + field.getSetter() + " for class " + clazz.getName() + '.', e);
+                        throw new MappingException("Can't invoke setter " + field.getSetter() + " for class "
+                                + clazz.getName() + '.', e);
                     }
                 }
             }
+        }
+
+        if (!columnNameByLowercaseColumnName.isEmpty()) {
+            StringBuilder message = new StringBuilder("There is uninitialized field(s) remained in the entity ")
+                    .append(instance);
+            
+            boolean first = true;
+
+            for (String columnName : columnNameByLowercaseColumnName.values()) {
+                message.append(first ? ": '" : ", '");
+                first = false;
+                message.append(columnName).append('\'');
+            }
+
+            message.append('.');
+
+            logger.error(message.toString());
         }
 
         return instance;

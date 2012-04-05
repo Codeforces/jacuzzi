@@ -121,9 +121,9 @@ class ReflectionUtil {
             }
 
             return new ReflectionFindResult<FastMethod>();
-        } catch (NoSuchMethodError e) {
+        } catch (NoSuchMethodError ignored) {
             return new ReflectionFindResult<FastMethod>();
-        } catch (NoSuchMethodException e) {
+        } catch (NoSuchMethodException ignored) {
             return new ReflectionFindResult<FastMethod>();
         }
     }
@@ -212,7 +212,7 @@ class ReflectionUtil {
             Field clazzField = clazz.getDeclaredField(field);
             return new ReflectionFindResult<Field>(clazzField,
                     clazzField.getAnnotation(Transient.class) != null);
-        } catch (NoSuchFieldException e) {
+        } catch (NoSuchFieldException ignored) {
             return new ReflectionFindResult<Field>();
         }
     }
@@ -226,7 +226,7 @@ class ReflectionUtil {
             this.transientAnnotated = transientAnnotated;
         }
 
-        public ReflectionFindResult() {
+        private ReflectionFindResult() {
         }
 
         public T getResult() {

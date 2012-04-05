@@ -11,13 +11,14 @@ import java.util.List;
 /**
  * @author Mike Mirzayanov
  */
+@SuppressWarnings("AccessOfSystemProperties")
 class PreparedStatementUtil {
     private static final Logger logger = Logger.getLogger(PreparedStatementUtil.class);
     
     private static final boolean LOG_SLOW_QUERIES = !"false".equals(System.getProperty("jacuzzi.logSlowQueries"));
     
-    private static final String LOG_SLOW_QUERIES_THRESHOLD_STRING =
-            System.getProperty("jacuzzi.logSlowQueriesThreshold");
+    private static final String LOG_SLOW_QUERIES_THRESHOLD_STRING
+            = System.getProperty("jacuzzi.logSlowQueriesThreshold");
     
     private static final long PRINT_QUERY_TIMES_THRESHOLD = Math.max(
             50L,
@@ -33,10 +34,9 @@ class PreparedStatementUtil {
 
     private static final int MAX_RETRY_COUNT = 10;
 
-    private static ResultSet preparedStatementExecuteQuery(PreparedStatement statement, String query) throws SQLException {
-        if (!LOG_SLOW_QUERIES) {
-            return statement.executeQuery();
-        } else {
+    private static ResultSet preparedStatementExecuteQuery(PreparedStatement statement, String query)
+            throws SQLException {
+        if (LOG_SLOW_QUERIES) {
             long before = System.currentTimeMillis();
             try {
                 return statement.executeQuery();
@@ -46,13 +46,13 @@ class PreparedStatementUtil {
                     logger.warn("Query \"" + query + "\" takes " + duration + " ms.");
                 }
             }
+        } else {
+            return statement.executeQuery();
         }
     }
 
     private static int preparedQueryExecuteUpdate(PreparedStatement statement, String query) throws SQLException {
-        if (!LOG_SLOW_QUERIES) {
-            return statement.executeUpdate();
-        } else {
+        if (LOG_SLOW_QUERIES) {
             long before = System.currentTimeMillis();
             try {
                 return statement.executeUpdate();
@@ -62,10 +62,14 @@ class PreparedStatementUtil {
                     logger.warn("Query \"" + query + "\" takes " + duration + " ms.");
                 }
             }
+        } else {
+            return statement.executeUpdate();
         }
     }
 
-    static List<Row> findRows(final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object... args) throws SQLException {
+    static List<Row> findRows(
+            final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object... args)
+            throws SQLException {
         return runAndReturn(new Invokable<List<Row>>() {
             @Override
             public List<Row> invoke() throws SQLException {
@@ -74,7 +78,8 @@ class PreparedStatementUtil {
         });
     }
 
-    private static List<Row> internalFindRows(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object... args) throws SQLException {
+    private static List<Row> internalFindRows(
+            DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object... args) throws SQLException {
         Connection connection = dataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
 
@@ -92,8 +97,9 @@ class PreparedStatementUtil {
         }
     }
 
-    public static int execute(final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query,
-                              final Object[] args, final List<Row> generatedKeys) throws SQLException {
+    public static int execute(
+            final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query,
+            final Object[] args, final List<Row> generatedKeys) throws SQLException {
         return runAndReturn(new Invokable<Integer>() {
             @Override
             public Integer invoke() throws SQLException {
@@ -102,7 +108,9 @@ class PreparedStatementUtil {
         });
     }
 
-    private static int internalExecute(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args, List<Row> generatedKeys) throws SQLException {
+    private static int internalExecute(
+            DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args, List<Row> generatedKeys)
+            throws SQLException {
         Connection connection = dataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
 
@@ -124,7 +132,9 @@ class PreparedStatementUtil {
         }
     }
 
-    public static Row findFirstRow(final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object[] args) throws SQLException {
+    public static Row findFirstRow(
+            final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object[] args)
+            throws SQLException {
         return runAndReturn(new Invokable<Row>() {
             @Override
             public Row invoke() throws SQLException {
@@ -133,7 +143,8 @@ class PreparedStatementUtil {
         });
     }
 
-    private static Row internalFindFirstRow(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args) throws SQLException {
+    private static Row internalFindFirstRow(
+            DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args) throws SQLException {
         Connection connection = dataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
 
@@ -151,7 +162,9 @@ class PreparedStatementUtil {
         }
     }
 
-    public static Object findOne(final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object[] args) throws SQLException {
+    public static Object findOne(
+            final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object[] args)
+            throws SQLException {
         return runAndReturn(new Invokable<Object>() {
             @Override
             public Object invoke() throws SQLException {
@@ -160,7 +173,8 @@ class PreparedStatementUtil {
         });
     }
 
-    private static Object internalFindOne(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args) throws SQLException {
+    private static Object internalFindOne(
+            DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args) throws SQLException {
         Connection connection = dataSourceUtil.getConnection(dataSource);
         PreparedStatement statement = null;
 
