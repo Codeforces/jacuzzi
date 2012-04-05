@@ -299,13 +299,25 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         if (!columnNameByLowercaseColumnName.isEmpty()) {
             StringBuilder message = new StringBuilder("There is uninitialized field(s) remained in the entity ")
                     .append(instance);
-            
+
             boolean first = true;
 
             for (String columnName : columnNameByLowercaseColumnName.values()) {
                 message.append(first ? ": '" : ", '");
                 first = false;
                 message.append(columnName).append('\'');
+            }
+
+            message.append(".\n\tStack trace:");
+
+            StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+
+            // Element 0 is always java.lang.Thread.getStackTrace().
+            // Element stackTraceElements.length - 1 is always java.lang.Thread.run().
+            for (int index = 1, lastIndex = stackTraceElements.length - 2; index <= lastIndex; ++index) {
+                StackTraceElement stackTraceElement = stackTraceElements[index];
+                message.append(index == 1 ? "\n\t\t" : ",\n\t\t");
+                message.append(stackTraceElement);
             }
 
             message.append('.');
