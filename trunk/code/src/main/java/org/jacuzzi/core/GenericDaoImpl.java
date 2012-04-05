@@ -369,7 +369,7 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
 
             idValues[index] = id;
 
-            index++;
+            ++index;
         }
 
         query.append(')');

@@ -35,14 +35,13 @@ public abstract class TypeOracle<T> {
     public abstract T newInstance();
 
     @SuppressWarnings({"unchecked"})
-    public static synchronized <T> TypeOracle<T> getTypeOracle(Class<T> typeClass) {
-        Map<Class<?>, CachedTypeOracle<?>> cache = CachedTypeOracle.getThreadLocalCache();
+    public static <T> TypeOracle<T> getTypeOracle(Class<T> typeClass) {
+        Map<Class<?>, TypeOracle<?>> cache = CachedTypeOracle.getThreadLocalCache();
 
         if (cache.containsKey(typeClass)) {
-            return (CachedTypeOracle<T>) cache.get(typeClass);
+            return (TypeOracle<T>) cache.get(typeClass);
         } else {
-            //System.out.println("TypeOracle created!");
-            CachedTypeOracle<T> typeOracle = new CachedTypeOracle<T>(typeClass);
+            TypeOracle<T> typeOracle = new CachedTypeOracle<T>(typeClass);
             cache.put(typeClass, typeOracle);
             return typeOracle;
         }
@@ -52,17 +51,17 @@ public abstract class TypeOracle<T> {
     static <T> T convertTo(Object parameter, Class<T> expectedClazz) {
         if (parameter == null) {
             return null;
-        } else {
-            if (parameter.getClass().equals(String.class) && expectedClazz.isEnum()) {
-                return convertStringToEnum((String) parameter, expectedClazz);
-            } else {
-                if (expectedClazz.equals(String.class) && !parameter.getClass().equals(String.class)) {
-                    return (T) parameter.toString();
-                } else {
-                    return (T) parameter;
-                }
-            }
         }
+
+        if (parameter.getClass().equals(String.class) && expectedClazz.isEnum()) {
+            return convertStringToEnum((String) parameter, expectedClazz);
+        }
+
+        if (expectedClazz.equals(String.class) && !parameter.getClass().equals(String.class)) {
+            return (T) parameter.toString();
+        }
+
+        return (T) parameter;
     }
 
     @SuppressWarnings({"unchecked"})

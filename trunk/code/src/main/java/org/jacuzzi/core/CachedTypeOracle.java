@@ -8,10 +8,10 @@ import java.util.Map;
  * @author Mike Mirzayanov
  */
 class CachedTypeOracle<T> extends TypeOracle<T> {
-    private static final ThreadLocal<Map<Class<?>, CachedTypeOracle<?>>> threadLocalCache = new ThreadLocal<Map<Class<?>, CachedTypeOracle<?>>>() {
+    private static final ThreadLocal<Map<Class<?>, TypeOracle<?>>> threadLocalCache = new ThreadLocal<Map<Class<?>, TypeOracle<?>>>() {
         @Override
-        protected Map<Class<?>, CachedTypeOracle<?>> initialValue() {
-            return new HashMap<Class<?>, CachedTypeOracle<?>>();
+        protected Map<Class<?>, TypeOracle<?>> initialValue() {
+            return new HashMap<Class<?>, TypeOracle<?>>();
         }
     };
 
@@ -25,7 +25,7 @@ class CachedTypeOracle<T> extends TypeOracle<T> {
         typeOracle = new TypeOracleImpl<T>(typeClass);
     }
 
-    static Map<Class<?>, CachedTypeOracle<?>> getThreadLocalCache() {
+    static Map<Class<?>, TypeOracle<?>> getThreadLocalCache() {
         return threadLocalCache.get();
     }
 
