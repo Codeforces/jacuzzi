@@ -112,6 +112,7 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         return convertFromRows(rows);
     }
 
+    @SuppressWarnings("OverloadedVarargsMethod")
     @Override
     public T findOnlyBy(boolean throwIfNotUnique, String query, Object... args) {
         List<T> instances = findBy(query, args);
@@ -126,6 +127,12 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         }
 
         return instances.get(0);
+    }
+
+    @SuppressWarnings("OverloadedVarargsMethod")
+    @Override
+    public T findOnlyBy(String query, Object... args) {
+        return findOnlyBy(true, query, args);
     }
 
     protected List<T> convertFromRows(List<Row> rows) {

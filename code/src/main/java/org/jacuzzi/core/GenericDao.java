@@ -51,14 +51,27 @@ public interface GenericDao<T, K> {
     /**
      * Returns the only instance for the specified query.
      *
-     * @param throwIfNotUnique if {@code true} then method will throw DatabaseException
+     * @param throwIfNotUnique if {@code true} then method will throw {@code {@link DatabaseException}}
      *                         if given query returns more than one row.
      * @param query            SQL-expression returning result set, containing rows for T. It is possible to use
      *                         reduced form (like "login=?").
      * @param args             Arguments to be substituted instead of "?".
      * @return Instance of T or {@code null} if no instance found.
      */
+    @SuppressWarnings("OverloadedVarargsMethod")
     T findOnlyBy(boolean throwIfNotUnique, String query, Object... args);
+
+    /**
+     * Returns the only instance for the specified query.
+     * Method will throw {@code {@link DatabaseException}} if given query returns more than one row.
+     *
+     * @param query SQL-expression returning result set, containing rows for T. It is possible to use
+     *              reduced form (like "login=?").
+     * @param args  Arguments to be substituted instead of "?".
+     * @return Instance of T or {@code null} if no instance found.
+     */
+    @SuppressWarnings("OverloadedVarargsMethod")
+    T findOnlyBy(String query, Object... args);
 
     /**
      * Saves (inserts or updates) entity instance.
