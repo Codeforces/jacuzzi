@@ -103,7 +103,6 @@ public class Jacuzzi {
                 // No operations.
             }
             detachConnection();
-            dataSourceUtil.closeConnection(connection);
         }
     }
 
@@ -124,7 +123,6 @@ public class Jacuzzi {
                 // No operations.
             }
             detachConnection();
-            dataSourceUtil.closeConnection(connection);
         }
     }
 
