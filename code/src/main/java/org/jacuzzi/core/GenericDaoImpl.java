@@ -172,13 +172,61 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
 
     @Override
     public void insert(T object) {
+        internalInsert(false, object);
+    }
+
+    @Override
+    public void insert(T... objects) {
+        if (objects == null || objects.length == 0) {
+            return;
+        }
+
+        insert(Arrays.asList(objects));
+    }
+
+    @Override
+    public void insert(List<T> objects) {
+        internalInsert(false, objects);
+    }
+
+    @Override
+    public void insertQuietly(T object) {
+        try {
+            internalInsert(true, object);
+        } catch (RuntimeException ignored) {
+            // No operations.
+        }
+    }
+
+    @Override
+    public void insertQuietly(T... objects) {
+        if (objects == null || objects.length == 0) {
+            return;
+        }
+
+        insertQuietly(Arrays.asList(objects));
+    }
+
+    @Override
+    public void insertQuietly(List<T> objects) {
+        try {
+            internalInsert(true, objects);
+        } catch (RuntimeException ignored) {
+            // No operations.
+        }
+    }
+
+    private void internalInsert(boolean ignoreErrors, T object) {
         if (object == null) {
             return;
         }
 
         boolean includeId = typeOracle.hasReasonableId(object);
 
-        StringBuilder query = new StringBuilder(Query.format("INSERT INTO ?t ", typeOracle.getTableName()));
+        StringBuilder query = new StringBuilder(Query.format(
+                ignoreErrors ? "INSERT IGNORE INTO ?t " : "INSERT INTO ?t ",
+                typeOracle.getTableName()
+        ));
         query.append('(').append(typeOracle.getFieldList(includeId, false)).append(") ");
         query.append("VALUES (").append(typeOracle.getValuesPatternListForInsert(includeId, object)).append(')');
 
@@ -199,17 +247,8 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         }
     }
 
-    @Override
-    public void insert(T... objects) {
-        if (objects == null || objects.length == 0) {
-            return;
-        }
-
-        insert(Arrays.asList(objects));
-    }
-
-    @Override
-    public void insert(List<T> objects) {
+    @SuppressWarnings({"OverlyComplexMethod", "OverlyLongMethod"})
+    private void internalInsert(boolean ignoreErrors, List<T> objects) {
         if (objects == null || objects.isEmpty()) {
             return;
         }
@@ -223,7 +262,11 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
             }
         }
 
-        StringBuilder query = new StringBuilder(Query.format("INSERT INTO ?t ", typeOracle.getTableName()));
+        StringBuilder query = new StringBuilder(Query.format(
+                ignoreErrors ? "INSERT IGNORE INTO ?t " : "INSERT INTO ?t ",
+                typeOracle.getTableName()
+        ));
+
         query.append('(').append(typeOracle.getFieldList(includeId, false)).append(") ");
         query.append("VALUES ");
 
