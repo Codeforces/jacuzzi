@@ -190,30 +190,22 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
     }
 
     @Override
-    public void insertQuietly(T object) {
-        try {
-            internalInsert(true, object);
-        } catch (RuntimeException ignored) {
-            // No operations.
-        }
+    public void insertIgnore(T object) {
+        internalInsert(true, object);
     }
 
     @Override
-    public void insertQuietly(T... objects) {
+    public void insertIgnore(T... objects) {
         if (objects == null || objects.length == 0) {
             return;
         }
 
-        insertQuietly(Arrays.asList(objects));
+        insertIgnore(Arrays.asList(objects));
     }
 
     @Override
-    public void insertQuietly(List<T> objects) {
-        try {
-            internalInsert(true, objects);
-        } catch (RuntimeException ignored) {
-            // No operations.
-        }
+    public void insertIgnore(List<T> objects) {
+        internalInsert(true, objects);
     }
 
     private void internalInsert(boolean ignoreErrors, T object) {

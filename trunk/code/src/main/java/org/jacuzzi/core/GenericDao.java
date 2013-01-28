@@ -108,31 +108,31 @@ public interface GenericDao<T, K> {
     void insert(List<T> objects);
 
     /**
-     * Inserts entity instance. It updates instance's @Id field if
+     * Inserts entity instance with IGNORE option. It updates instance's @Id field if
      * insert statement generates exactly one generated key (auto-incremented value).
-     * Never throws exception.
      *
      * @param object Entity instance.
+     * @throws DatabaseException if can't save instances.
      */
-    void insertQuietly(T object);
+    void insertIgnore(T object);
 
     /**
-     * Inserts multiple entity instances. It updates instance's @Id field if
+     * Inserts multiple entity instances with IGNORE option. It updates instance's @Id field if
      * insert statement generates exactly one generated key (auto-incremented value).
-     * Never throws exception.
      *
      * @param objects Variable number of entity instances.
+     * @throws DatabaseException if can't save instances.
      */
-    void insertQuietly(T... objects);
+    void insertIgnore(T... objects);
 
     /**
-     * Inserts multiple entity instances. It updates instance's @Id field if
+     * Inserts multiple entity instances with IGNORE option. It updates instance's @Id field if
      * insert statement generates exactly one generated key (auto-incremented value).
-     * Never throws exception.
      *
      * @param objects List of entity instances.
+     * @throws DatabaseException if can't save instances.
      */
-    void insertQuietly(List<T> objects);
+    void insertIgnore(List<T> objects);
 
     /**
      * Updates entity instance.
