@@ -154,11 +154,11 @@ public class Jacuzzi {
      */
     public InsertResult insert(String query, Object... args) {
         try {
-            List<Row> generated = new LinkedList<Row>();
+            List<Row> generated = new ArrayList<Row>(1);
             int count = PreparedStatementUtil.execute(dataSource, dataSourceUtil, query, args, generated);
             if (generated.isEmpty()) {
                 List<Row> generatedKeys = new ArrayList<Row>(1);
-                generatedKeys.add(new Row());
+                generatedKeys.add(new Row(1));
                 return new InsertResult(count, generatedKeys);
             } else {
                 if (generated.size() > 1) {
@@ -184,7 +184,7 @@ public class Jacuzzi {
      */
     public InsertResult multipleInsert(String query, Object... args) {
         try {
-            List<Row> generated = new LinkedList<Row>();
+            List<Row> generated = new ArrayList<Row>();
             int count = PreparedStatementUtil.execute(dataSource, dataSourceUtil, query, args, generated);
 
             return new InsertResult(count, generated);

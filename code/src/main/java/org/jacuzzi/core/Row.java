@@ -1,16 +1,32 @@
 package org.jacuzzi.core;
 
+import javax.annotation.Nonnull;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Mike Mirzayanov
  */
-public class Row extends HashMap<String, Object> {
+public class Row implements Map<String, Object> {
+    private static final int MAX_ARRAY_MAP_SIZE = 4;
+
+    private final Map<String, Object> delegateMap;
+
+    public Row(int capacity) {
+        if (capacity <= MAX_ARRAY_MAP_SIZE) {
+            delegateMap = new ArrayMap<String, Object>(capacity);
+        } else {
+            delegateMap = new HashMap<String, Object>(capacity, 1.0f);
+        }
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public Row() {
+        delegateMap = new HashMap<String, Object>();
+    }
+
     /**
      * Extracts all rows from the result set and return them as List.
      *
@@ -18,18 +34,24 @@ public class Row extends HashMap<String, Object> {
      * @return List<Row> Rows in result set.
      */
     static List<Row> readFromResultSet(ResultSet resultSet) {
-        List<Row> result = new LinkedList<Row>();
+        ArrayList<Row> result = new ArrayList<Row>();
+
         try {
             ResultSetMetaData metaData = resultSet.getMetaData();
-
             while (resultSet.next()) {
                 addRowFromResultSet(resultSet, result, metaData);
             }
-
-            resultSet.close();
         } catch (SQLException e) {
             throw new DatabaseException("Can't read the list of rows from the result set.", e);
+        } finally {
+            try {
+                resultSet.close();
+            } catch (SQLException e) {
+                // No operations.
+            }
         }
+
+        result.trimToSize();
         return result;
     }
 
@@ -40,16 +62,23 @@ public class Row extends HashMap<String, Object> {
      * @return Row The first row from the result set.
      */
     static Row readFirstFromResultSet(ResultSet resultSet) {
-        List<Row> result = new LinkedList<Row>();
+        List<Row> result = new ArrayList<Row>(1);
+
         try {
             ResultSetMetaData metaData = resultSet.getMetaData();
             if (resultSet.next()) {
                 addRowFromResultSet(resultSet, result, metaData);
             }
-            resultSet.close();
         } catch (SQLException e) {
             throw new DatabaseException("Can't read the first row from the result set.", e);
+        } finally {
+            try {
+                resultSet.close();
+            } catch (SQLException e) {
+                // No operations.
+            }
         }
+
         return result.size() == 1 ? result.get(0) : null;
     }
 
@@ -61,14 +90,77 @@ public class Row extends HashMap<String, Object> {
      * @param metaData  JDBC meta data.
      */
     private static void addRowFromResultSet(ResultSet resultSet, List<Row> result, ResultSetMetaData metaData) {
-        Row row = new Row();
         try {
+            Row row = new Row(metaData.getColumnCount());
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
                 row.put(metaData.getColumnLabel(i), resultSet.getObject(i));
             }
+            result.add(row);
         } catch (SQLException e) {
             throw new DatabaseException("Can't add row from the result set.", e);
         }
-        result.add(row);
+    }
+
+    @Override
+    public int size() {
+        return delegateMap.size();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return delegateMap.isEmpty();
+    }
+
+    @Override
+    public boolean containsKey(Object key) {
+        return delegateMap.containsKey(key);
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+        return delegateMap.containsValue(value);
+    }
+
+    @Override
+    public Object get(Object key) {
+        return delegateMap.get(key);
+    }
+
+    @Override
+    public Object put(String key, Object value) {
+        return delegateMap.put(key, value);
+    }
+
+    @Override
+    public Object remove(Object key) {
+        return delegateMap.remove(key);
+    }
+
+    @Override
+    public void putAll(@Nonnull Map<? extends String, ?> m) {
+        delegateMap.putAll(m);
+    }
+
+    @Override
+    public void clear() {
+        delegateMap.clear();
+    }
+
+    @Override
+    @Nonnull
+    public Set<String> keySet() {
+        return delegateMap.keySet();
+    }
+
+    @Override
+    @Nonnull
+    public Collection<Object> values() {
+        return delegateMap.values();
+    }
+
+    @Override
+    @Nonnull
+    public Set<Entry<String, Object>> entrySet() {
+        return delegateMap.entrySet();
     }
 }
