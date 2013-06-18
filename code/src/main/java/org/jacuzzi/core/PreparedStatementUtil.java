@@ -14,12 +14,12 @@ import java.util.List;
 @SuppressWarnings("AccessOfSystemProperties")
 class PreparedStatementUtil {
     private static final Logger logger = Logger.getLogger(PreparedStatementUtil.class);
-    
+
     private static final boolean LOG_SLOW_QUERIES = !"false".equals(System.getProperty("jacuzzi.logSlowQueries"));
-    
+
     private static final String LOG_SLOW_QUERIES_THRESHOLD_STRING
             = System.getProperty("jacuzzi.logSlowQueriesThreshold");
-    
+
     private static final long PRINT_QUERY_TIMES_THRESHOLD = Math.max(
             50L,
             LOG_SLOW_QUERIES_THRESHOLD_STRING == null ? 250L : Long.parseLong(LOG_SLOW_QUERIES_THRESHOLD_STRING)
@@ -34,7 +34,7 @@ class PreparedStatementUtil {
 
     private static final int MAX_RETRY_COUNT = 10;
 
-    private static ResultSet preparedStatementExecuteQuery(PreparedStatement statement, String query)
+    private static ResultSet preparedStatementExecuteQuery(PreparedStatement statement, String query, Object[] args)
             throws SQLException {
         if (LOG_SLOW_QUERIES) {
             long before = System.currentTimeMillis();
@@ -43,7 +43,9 @@ class PreparedStatementUtil {
             } finally {
                 long duration = System.currentTimeMillis() - before;
                 if (duration > PRINT_QUERY_TIMES_THRESHOLD) {
-                    logger.warn("Query \"" + query + "\" takes " + duration + " ms.");
+                    logger.warn(String.format(
+                            "Query \"%s\" with parameters [%s] takes %d ms.", query, formatParameters(args), duration
+                    ));
                 }
             }
         } else {
@@ -51,7 +53,8 @@ class PreparedStatementUtil {
         }
     }
 
-    private static int preparedQueryExecuteUpdate(PreparedStatement statement, String query) throws SQLException {
+    private static int preparedQueryExecuteUpdate(PreparedStatement statement, String query, Object[] args)
+            throws SQLException {
         if (LOG_SLOW_QUERIES) {
             long before = System.currentTimeMillis();
             try {
@@ -59,12 +62,24 @@ class PreparedStatementUtil {
             } finally {
                 long duration = System.currentTimeMillis() - before;
                 if (duration > PRINT_QUERY_TIMES_THRESHOLD) {
-                    logger.warn("Query \"" + query + "\" takes " + duration + " ms.");
+                    logger.warn(String.format(
+                            "Query \"%s\" with parameters [%s] takes %d ms.", query, formatParameters(args), duration
+                    ));
                 }
             }
         } else {
             return statement.executeUpdate();
         }
+    }
+
+    private static String formatParameters(Object[] args) {
+        StringBuilder builder = new StringBuilder();
+
+        for (int parameterIndex = 0, parameterCount = args.length; parameterIndex < parameterCount; ++parameterIndex) {
+            builder.append(parameterIndex > 0 ? ", '" : "'").append(args[parameterIndex]).append('\'');
+        }
+
+        return builder.toString();
     }
 
     static List<Row> findRows(
@@ -87,7 +102,7 @@ class PreparedStatementUtil {
             statement = getPreparedStatement(query, connection);
 
             setupPreparedStatementParameters(statement, args);
-            ResultSet resultSet = preparedStatementExecuteQuery(statement, query);
+            ResultSet resultSet = preparedStatementExecuteQuery(statement, query, args);
             statement.clearParameters();
 
             return Row.readFromResultSet(resultSet);
@@ -118,7 +133,7 @@ class PreparedStatementUtil {
             try {
                 statement = getPreparedStatement(query, connection);
                 setupPreparedStatementParameters(statement, args);
-                int result = preparedQueryExecuteUpdate(statement, query);
+                int result = preparedQueryExecuteUpdate(statement, query, args);
                 if (generatedKeys != null) {
                     generatedKeys.addAll(Row.readFromResultSet(statement.getGeneratedKeys()));
                 }
@@ -152,7 +167,7 @@ class PreparedStatementUtil {
             statement = getPreparedStatement(query, connection);
 
             setupPreparedStatementParameters(statement, args);
-            ResultSet resultSet = preparedStatementExecuteQuery(statement, query);
+            ResultSet resultSet = preparedStatementExecuteQuery(statement, query, args);
             statement.clearParameters();
 
             return Row.readFirstFromResultSet(resultSet);
@@ -182,12 +197,13 @@ class PreparedStatementUtil {
             statement = getPreparedStatement(query, connection);
             setupPreparedStatementParameters(statement, args);
 
-            ResultSet resultSet = preparedStatementExecuteQuery(statement, query);
+            ResultSet resultSet = preparedStatementExecuteQuery(statement, query, args);
 
             int columnCount = resultSet.getMetaData().getColumnCount();
             if (columnCount != 1) {
-                throw new SQLException("Expected to return exactly one column, but "
-                        + columnCount + " found for query " + query);
+                throw new SQLException(String.format(
+                        "Expected to return exactly one column, but %d found for query %s", columnCount, query
+                ));
             }
 
             Object result = null;
@@ -196,8 +212,7 @@ class PreparedStatementUtil {
             }
 
             if (resultSet.next()) {
-                throw new SQLException("Expected to return exactly one row by "
-                        + query);
+                throw new SQLException(String.format("Expected to return exactly one row by query %s", query));
             }
 
             resultSet.close();
@@ -253,7 +268,7 @@ class PreparedStatementUtil {
     public static <T> T runAndReturn(Invokable<T> invokable) throws SQLException {
         SQLRecoverableException exception = null;
 
-        for (int i = 0; i < MAX_RETRY_COUNT; i++) {
+        for (int i = 0; i < MAX_RETRY_COUNT; ++i) {
             try {
                 return invokable.invoke();
             } catch (SQLRecoverableException e) {
