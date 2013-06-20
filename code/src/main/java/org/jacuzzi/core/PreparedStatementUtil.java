@@ -1,5 +1,6 @@
 package org.jacuzzi.core;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 
 import javax.sql.DataSource;
@@ -75,8 +76,19 @@ class PreparedStatementUtil {
     private static String formatParameters(Object[] args) {
         StringBuilder builder = new StringBuilder();
 
-        for (int parameterIndex = 0, parameterCount = args.length; parameterIndex < parameterCount; ++parameterIndex) {
-            builder.append(parameterIndex > 0 ? ", '" : "'").append(args[parameterIndex]).append('\'');
+        for (int argIndex = 0, argCount = args.length; argIndex < argCount; ++argIndex) {
+            if (argIndex > 0) {
+                builder.append(", ");
+            }
+
+            Object argument = args[argIndex];
+            if (argument == null) {
+                builder.append("null");
+            } else if (argument.getClass().isArray()) {
+                builder.append(ArrayUtils.toString(argument));
+            } else {
+                builder.append('\'').append(argument.toString()).append('\'');
+            }
         }
 
         return builder.toString();
