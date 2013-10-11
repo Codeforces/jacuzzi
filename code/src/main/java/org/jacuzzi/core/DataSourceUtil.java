@@ -18,6 +18,7 @@ import java.sql.SQLException;
 class DataSourceUtil {
     /**
      * Attached connection per thread.
+     * TODO make connection thread and data source scoped, because after starting transaction in DS A we can't user DS B until we close transaction
      */
     private static final ThreadLocal<Connection> attachedConnection = new ThreadLocal<Connection>();
 
