@@ -266,6 +266,26 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         }
     }
 
+    private String toString(Row row) {
+        StringBuilder result = new StringBuilder("{");
+        boolean first = true;
+        for (Map.Entry<String, Object> entry : row.entrySet()) {
+            if (first) {
+                first= false;
+            } else {
+                result.append(',');
+            }
+            if (entry.getValue() == null) {
+                result.append(entry.getKey()).append(':').append("null");
+            } else {
+                result.append(entry.getKey()).append(':').append(entry.getValue().getClass().getName())
+                        .append('=').append(entry.getValue());
+            }
+        }
+        result.append('}');
+        return result.toString();
+    }
+
     @Override
     public T convertFromRow(Row row) {
         Set<String> columns = row.keySet();
@@ -287,10 +307,18 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
                 } catch (InvocationTargetException e) {
                     if (row.get(column) != null) {
                         throw new MappingException("Can't invoke setter " + field.getSetter() + "[clazz="
-                                + clazz.getName() + "] for parameter " + row.get(column).getClass() + '.', e);
+                                + clazz.getName() + "] for parameter " + row.get(column).getClass() + " [row=" + toString(row) + "].", e);
                     } else {
                         throw new MappingException("Can't invoke setter " + field.getSetter() + " for class "
-                                + clazz.getName() + '.', e);
+                                + clazz.getName() + " [row=" + toString(row) + "].", e);
+                    }
+                } catch (RuntimeException e) {
+                    if (row.get(column) != null) {
+                        throw new MappingException("Can't invoke setter " + field.getSetter() + "[clazz="
+                                + clazz.getName() + "] for parameter " + row.get(column).getClass() + " [row=" + toString(row) + "].", e);
+                    } else {
+                        throw new MappingException("Can't invoke setter " + field.getSetter() + " for class "
+                                + clazz.getName() + " [row=" + toString(row) + "].", e);
                     }
                 }
             }
