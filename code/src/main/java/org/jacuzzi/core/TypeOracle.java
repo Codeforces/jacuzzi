@@ -1,5 +1,8 @@
 package org.jacuzzi.core;
 
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -59,6 +62,16 @@ public abstract class TypeOracle<T> {
 
         if (expectedClazz.equals(String.class) && !parameter.getClass().equals(String.class)) {
             return (T) parameter.toString();
+        }
+
+        if (parameter.getClass().equals(java.sql.Timestamp.class) && expectedClazz.equals(java.util.Date.class)) {
+            java.sql.Timestamp timestamp = (Timestamp) parameter;
+            return (T) new java.util.Date(timestamp.getTime());
+        }
+
+        if (parameter.getClass().equals(java.sql.Date.class) && expectedClazz.equals(java.util.Date.class)) {
+            java.sql.Date date = (Date) parameter;
+            return (T) new java.util.Date(date.getTime());
         }
 
         return (T) parameter;
