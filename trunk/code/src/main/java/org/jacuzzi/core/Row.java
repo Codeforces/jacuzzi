@@ -4,13 +4,14 @@ import javax.annotation.Nonnull;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.*;
 
 /**
  * @author Mike Mirzayanov
  */
 public class Row implements Map<String, Object> {
-    private static final int MAX_ARRAY_MAP_SIZE = 4;
+    private static final int MAX_ARRAY_MAP_SIZE = 12;
 
     private final Map<String, Object> delegateMap;
 
@@ -128,6 +129,14 @@ public class Row implements Map<String, Object> {
 
     @Override
     public Object put(String key, Object value) {
+        if (value != null && value.getClass().equals(java.sql.Timestamp.class)) {
+            value = new Date(((java.sql.Timestamp) value).getTime());
+        }
+
+        if (value != null && value.getClass().equals(java.sql.Date.class)) {
+            value = new Date(((java.sql.Date) value).getTime());
+        }
+
         return delegateMap.put(key, value);
     }
 

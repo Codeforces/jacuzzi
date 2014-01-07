@@ -50,8 +50,9 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
     @Override
     public boolean containsKey(Object key) {
+        int keyHash = key == null ? 0 : key.hashCode();
         for (int i = 0; i < size; i++) {
-            if (same(key, hashCodes[i], keys[i])) {
+            if (same(keyHash, key, hashCodes[i], keys[i])) {
                 return true;
             }
         }
@@ -70,8 +71,9 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
     @Override
     public V get(Object key) {
+        int keyHash = key == null ? 0 : key.hashCode();
         for (int i = 0; i < size; i++) {
-            if (same(key, hashCodes[i], keys[i])) {
+            if (same(keyHash, key, hashCodes[i], keys[i])) {
                 return values[i];
             }
         }
@@ -80,8 +82,9 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
     @Override
     public V put(K key, V value) {
+        int keyHash = key == null ? 0 : key.hashCode();
         for (int i = 0; i < size; i++) {
-            if (same(key, hashCodes[i], keys[i])) {
+            if (same(keyHash, key, hashCodes[i], keys[i])) {
                 V result = values[i];
                 values[i] = value;
                 return result;
@@ -89,7 +92,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
         }
 
         keys[size] = key;
-        hashCodes[size] = key == null ? 0 : key.hashCode();
+        hashCodes[size] = keyHash;
         values[size] = value;
         size++;
 
@@ -98,8 +101,9 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
     @Override
     public V remove(Object key) {
+        int keyHash = key == null ? 0 : key.hashCode();
         for (int i = 0; i < size; i++) {
-            if (same(key, hashCodes[i], keys[i])) {
+            if (same(keyHash, key, hashCodes[i], keys[i])) {
                 V result = values[i];
                 System.arraycopy(keys, i + 1, keys, i, size - (i + 1));
                 System.arraycopy(hashCodes, i + 1, hashCodes, i, size - (i + 1));
@@ -224,8 +228,8 @@ public class ArrayMap<K, V> implements Map<K, V> {
         return a == b || (a != null && a.equals(b));
     }
 
-    private boolean same(@Nullable Object a, int bHashCode, @Nullable Object b) {
-        return a == b || (a != null && a.hashCode() == bHashCode && a.equals(b));
+    private boolean same(int aHashCode, @Nullable Object a, int bHashCode, @Nullable Object b) {
+        return a == b || (a != null && aHashCode == bHashCode && a.equals(b));
     }
 
     private class ArrayMapEntrySet extends AbstractSet<Entry<K, V>> implements Set<Entry<K, V>> {
