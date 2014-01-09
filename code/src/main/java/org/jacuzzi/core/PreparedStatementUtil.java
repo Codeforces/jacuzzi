@@ -189,6 +189,22 @@ class PreparedStatementUtil {
         }
     }
 
+    private static Object wrapResult(Object result) {
+        if (result == null) {
+            return result;
+        }
+
+        if (result.getClass().equals(Timestamp.class)) {
+            result = new Date(((java.sql.Timestamp) result).getTime());
+        }
+
+        if (result.getClass().equals(java.sql.Date.class)) {
+            result = new Date(((java.sql.Date) result).getTime());
+        }
+
+        return result;
+    }
+
     public static Object findOne(
             final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object[] args)
             throws SQLException {
@@ -230,7 +246,7 @@ class PreparedStatementUtil {
             resultSet.close();
             statement.clearParameters();
 
-            return result;
+            return wrapResult(result);
         } finally {
             tryCloseStatement(statement);
             tryCloseConnection(dataSourceUtil, connection);
