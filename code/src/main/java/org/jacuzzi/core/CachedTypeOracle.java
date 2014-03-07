@@ -70,8 +70,13 @@ class CachedTypeOracle<T> extends TypeOracle<T> {
     }
 
     @Override
-    String getQuerySetSql() {
+    public String getQuerySetSql() {
         return typeOracle.getQuerySetSql();
+    }
+
+    @Override
+    public String getQueryFindSql(String[] fields) {
+        return typeOracle.getQueryFindSql(fields);
     }
 
     @Override

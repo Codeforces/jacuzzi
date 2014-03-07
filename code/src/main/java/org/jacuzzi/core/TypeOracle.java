@@ -2,7 +2,6 @@ package org.jacuzzi.core;
 
 import java.sql.Date;
 import java.sql.Timestamp;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -27,7 +26,13 @@ public abstract class TypeOracle<T> {
 
     abstract boolean hasReasonableId(T instance);
 
-    abstract String getQuerySetSql();
+    public abstract String getQuerySetSql();
+
+    /**
+     * @param fields Fields to find joined with AND operator.
+     * @return WHERE section. For example: "`id`=? AND `name`=?".
+     */
+    public abstract String getQueryFindSql(String[] fields);
 
     abstract Object[] getQuerySetArguments(T instance);
 
