@@ -112,6 +112,25 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
     }
 
     @Override
+    public String getQueryFindSql(String[] fields) {
+        if (fields.length == 0) {
+            return "TRUE";
+        }
+
+        StringBuilder result = new StringBuilder();
+
+        for (String ignored : fields) {
+            if (result.length() > 0) {
+                result.append(" AND ");
+            }
+            result.append("?f=?");
+        }
+
+        return Query.format(result.toString(), fields);
+    }
+
+
+    @Override
     public String getFieldList(boolean includeId, boolean useTablePrefix) {
         if (fields.isEmpty()) {
             throw new MappingException("Nothing to set for class " + clazz + '.');

@@ -1,11 +1,9 @@
 package org.jacuzzi;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
+import junit.framework.Assert;
 import junit.framework.TestCase;
-import org.jacuzzi.core.DatabaseException;
-import org.jacuzzi.core.GenericDaoImpl;
-import org.jacuzzi.core.Jacuzzi;
-import org.jacuzzi.core.Row;
+import org.jacuzzi.core.*;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -580,6 +578,24 @@ public class JacuzziTest extends TestCase {
         phantomFieldObjectDao.insert(phantomFieldObject);
 
         assertEquals(42, phantomFieldObjectDao.find(123).getNonExistingField());
+    }
+
+    public void testTypeOracleGetQueryFindSql() {
+        TypeOracle typeOracle = TypeOracle.getTypeOracle(User.class);
+
+        boolean oldFieldQuotation = Boolean.parseBoolean(System.getProperty("jacuzzi.fieldQuotation"));
+
+        System.setProperty("jacuzzi.fieldQuotation", "false");
+        assertEquals("TRUE", typeOracle.getQueryFindSql(new String[0]));
+        assertEquals("id=?", typeOracle.getQueryFindSql(new String[]{"id"}));
+        assertEquals("id=? AND name=?", typeOracle.getQueryFindSql(new String[]{"id", "name"}));
+
+        System.setProperty("jacuzzi.fieldQuotation", "true");
+        assertEquals("TRUE", typeOracle.getQueryFindSql(new String[0]));
+        assertEquals("`id`=?", typeOracle.getQueryFindSql(new String[]{"id"}));
+        assertEquals("`id`=? AND `name`=?", typeOracle.getQueryFindSql(new String[]{"id", "name"}));
+
+        System.setProperty("jacuzzi.fieldQuotation", Boolean.toString(oldFieldQuotation));
     }
 
     static {
