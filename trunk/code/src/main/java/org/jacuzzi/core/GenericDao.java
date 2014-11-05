@@ -49,6 +49,19 @@ public interface GenericDao<T, K> {
     List<T> findBy(String query, Object... args);
 
     /**
+     * Returns the number of entities matched given query.
+     * Examples:
+     * <code>
+     * activeUserCount = userDao.findCountBy("active = ?", 1);
+     * </code>
+     *
+     * @param query Query in reduced form (conditions for WHERE section).
+     * @param args  Arguments to replace "?" jokers in {@code query}.
+     * @return The number of entities matched given query.
+     */
+    long findCountBy(String query, Object... args);
+
+    /**
      * Returns the only instance for the specified query.
      *
      * @param throwIfNotUnique if {@code true} then method will throw {@code {@link DatabaseException}}
