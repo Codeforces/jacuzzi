@@ -1,7 +1,6 @@
 package org.jacuzzi;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
-import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.jacuzzi.core.*;
 
@@ -85,6 +84,23 @@ public class JacuzziTest extends TestCase {
         assertEquals(1, users.size());
         assertEquals(1L, users.get(0).getId());
         assertEquals("jacuzzi", users.get(0).getName());
+    }
+
+    public void testFindCountBy() throws SQLException {
+        assertEquals(0, userDao.findCountBy("TRUE"));
+
+        final int USER_COUNT = 1000;
+
+        for (int i = 0; i < USER_COUNT; i++) {
+            User user = new User();
+            user.setName(i + "");
+            userDao.insert(user);
+        }
+
+        assertEquals(USER_COUNT, userDao.findCountBy("TRUE"));
+        assertEquals(USER_COUNT / 10, userDao.findCountBy("SUBSTRING(name, LENGTH(name), 1) = '0'"));
+        assertEquals(1, userDao.findCountBy("SUBSTRING(name, LENGTH(name), 1) = '0' AND SUBSTRING(name, 1, 1) = '0'"));
+        assertEquals(0, userDao.findCountBy("SUBSTRING(name, LENGTH(name), 1) = 'z'"));
     }
 
     public void testThatSelectRecognitionWorks() throws SQLException {

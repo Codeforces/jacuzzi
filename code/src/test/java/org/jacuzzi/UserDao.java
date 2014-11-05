@@ -6,6 +6,8 @@ import java.util.List;
  * @author Mike Mirzayanov
  */
 public interface UserDao {
+    long findCountBy(String query, Object... args);
+
     List<User> findByName(String name);
 
     void insert(User user);

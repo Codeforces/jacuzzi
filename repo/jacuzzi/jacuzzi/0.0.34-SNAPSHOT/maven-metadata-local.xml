@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>jacuzzi</groupId>
+  <artifactId>jacuzzi</artifactId>
+  <version>0.0.34-SNAPSHOT</version>
+  <versioning>
+    <snapshot>
+      <localCopy>true</localCopy>
+    </snapshot>
+    <lastUpdated>20141105101223</lastUpdated>
+  </versioning>
+</metadata>

@@ -112,6 +112,19 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         return convertFromRows(rows);
     }
 
+    @Override
+    public long findCountBy(String query, Object... args) {
+        if (!STARTS_WITH_WHERE_PATTERN.matcher(query).matches()) {
+            query = "WHERE " + query;
+        }
+
+        String table = typeOracle.getTableName();
+        String idColumn = typeOracle.getIdColumn();
+        query = Query.format("SELECT COUNT(?f) FROM ?t ", idColumn, table) + query;
+
+        return jacuzzi.findLong(query, args);
+    }
+
     @SuppressWarnings("OverloadedVarargsMethod")
     @Override
     public T findOnlyBy(boolean throwIfNotUnique, String query, Object... args) {
