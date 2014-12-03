@@ -17,6 +17,7 @@ class PreparedStatementUtil {
     private static final Logger logger = Logger.getLogger(PreparedStatementUtil.class);
 
     private static final boolean LOG_SLOW_QUERIES = !"false".equals(System.getProperty("jacuzzi.logSlowQueries"));
+    private static final boolean DEBUG_QUERIES = "true".equals(System.getProperty("jacuzzi.debugQueries"));
 
     private static final String LOG_SLOW_QUERIES_THRESHOLD_STRING
             = System.getProperty("jacuzzi.logSlowQueriesThreshold");
@@ -37,7 +38,7 @@ class PreparedStatementUtil {
 
     private static ResultSet preparedStatementExecuteQuery(PreparedStatement statement, String query, Object[] args)
             throws SQLException {
-        if (LOG_SLOW_QUERIES) {
+        if (LOG_SLOW_QUERIES || DEBUG_QUERIES) {
             long before = System.currentTimeMillis();
             try {
                 return statement.executeQuery();
@@ -45,6 +46,11 @@ class PreparedStatementUtil {
                 long duration = System.currentTimeMillis() - before;
                 if (duration > PRINT_QUERY_TIMES_THRESHOLD) {
                     logger.warn(String.format(
+                            "Query \"%s\" with parameters [%s] takes %d ms.", query, formatParameters(args), duration
+                    ));
+                }
+                if (DEBUG_QUERIES) {
+                    logger.debug(   String.format(
                             "Query \"%s\" with parameters [%s] takes %d ms.", query, formatParameters(args), duration
                     ));
                 }
@@ -56,14 +62,19 @@ class PreparedStatementUtil {
 
     private static int preparedQueryExecuteUpdate(PreparedStatement statement, String query, Object[] args)
             throws SQLException {
-        if (LOG_SLOW_QUERIES) {
+        if (LOG_SLOW_QUERIES || DEBUG_QUERIES) {
             long before = System.currentTimeMillis();
             try {
                 return statement.executeUpdate();
             } finally {
                 long duration = System.currentTimeMillis() - before;
-                if (duration > PRINT_QUERY_TIMES_THRESHOLD) {
+                if (LOG_SLOW_QUERIES && duration > PRINT_QUERY_TIMES_THRESHOLD) {
                     logger.warn(String.format(
+                            "Query \"%s\" with parameters [%s] takes %d ms.", query, formatParameters(args), duration
+                    ));
+                }
+                if (DEBUG_QUERIES) {
+                    logger.debug(String.format(
                             "Query \"%s\" with parameters [%s] takes %d ms.", query, formatParameters(args), duration
                     ));
                 }
@@ -120,7 +131,7 @@ class PreparedStatementUtil {
             return Row.readFromResultSet(resultSet);
         } finally {
             tryCloseStatement(statement);
-            tryCloseConnection(dataSourceUtil, connection);
+            tryCloseConnection(dataSourceUtil, dataSource, connection);
         }
     }
 
@@ -155,7 +166,7 @@ class PreparedStatementUtil {
             }
         } finally {
             tryCloseStatement(statement);
-            tryCloseConnection(dataSourceUtil, connection);
+            tryCloseConnection(dataSourceUtil, dataSource, connection);
         }
     }
 
@@ -185,7 +196,7 @@ class PreparedStatementUtil {
             return Row.readFirstFromResultSet(resultSet);
         } finally {
             tryCloseStatement(statement);
-            tryCloseConnection(dataSourceUtil, connection);
+            tryCloseConnection(dataSourceUtil, dataSource, connection);
         }
     }
 
@@ -249,12 +260,12 @@ class PreparedStatementUtil {
             return wrapResult(result);
         } finally {
             tryCloseStatement(statement);
-            tryCloseConnection(dataSourceUtil, connection);
+            tryCloseConnection(dataSourceUtil, dataSource, connection);
         }
     }
 
-    private static void tryCloseConnection(DataSourceUtil dataSourceUtil, Connection connection) {
-        dataSourceUtil.closeConnection(connection);
+    private static void tryCloseConnection(DataSourceUtil dataSourceUtil, DataSource dataSource, Connection connection) {
+        dataSourceUtil.closeConnection(dataSource, connection);
     }
 
     private static void tryCloseStatement(Statement statement) {
