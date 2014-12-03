@@ -50,7 +50,14 @@ public class Jacuzzi {
      * Detaches connection from the current thread.
      */
     public void detachConnection() {
-        dataSourceUtil.detachConnection();
+        dataSourceUtil.detachConnection(dataSource);
+    }
+
+    /**
+     * Detaches connection from the current thread.
+     */
+    public void detachConnectionOrThrowException() {
+        dataSourceUtil.detachConnectionOrThrowException(dataSource);
     }
 
     /**
@@ -360,7 +367,7 @@ public class Jacuzzi {
      * @return {@code Jacuzzi} instance.
      */
     public static Jacuzzi getJacuzzi(DataSource source) {
-        Map<DataSource, Jacuzzi> cache = getThreadCache();
+        final Map<DataSource, Jacuzzi> cache = getThreadCache();
 
         synchronized (cache) {
             if (cache.containsKey(source)) {
