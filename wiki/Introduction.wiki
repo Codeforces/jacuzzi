@@ -118,3 +118,5 @@ You can use @MappedTo annotation to specify table name (if you annotated class) 
 Also it is possible to use @Transient for classes or fields to specify the fact that class (field) not mapped. Usually @Transient used for some superclasses.
 
 Your entities should have getter and setter (not necessary public) for mapped fields.
+
+In 0.0.36-SNAPSHOT version added @OperationControl annotation for fields (and for getters/setters in future updates). It has 3 flags: ignoreSelect, ignoreInsert and ignoreUpdate. Default value of all flags is false. True value of each flag means that annotated field will be ignored when executing corresponding operation.
