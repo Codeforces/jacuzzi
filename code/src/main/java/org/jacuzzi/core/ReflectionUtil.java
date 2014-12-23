@@ -30,7 +30,7 @@ class ReflectionUtil {
     }
 
     static String getSetterName(String name) {
-        if (name.length() < 1) {
+        if (name.isEmpty()) {
             throw new IllegalArgumentException("Field name too short '" + name + "'.");
         }
 
@@ -38,7 +38,7 @@ class ReflectionUtil {
     }
 
     static String getGetterName(String name) {
-        if (name.length() < 1) {
+        if (name.isEmpty()) {
             throw new IllegalArgumentException("Field name too short '" + name + "'.");
         }
 
@@ -46,7 +46,7 @@ class ReflectionUtil {
     }
 
     static String getBooleanGetterName(String name) {
-        if (name.length() < 1) {
+        if (name.isEmpty()) {
             throw new IllegalArgumentException("Field name too short '" + name + "'.");
         }
 
@@ -61,11 +61,8 @@ class ReflectionUtil {
                 break;
             }
 
-            ReflectionFindResult<Field> clazzField =
-                    findMappedClassField(clazz, field);
-
-            ReflectionFindResult<FastMethod> clazzMethod =
-                    findMappedClassMethod(clazz, setterName);
+            ReflectionFindResult<Field> clazzField = findMappedClassField(clazz, field);
+            ReflectionFindResult<FastMethod> clazzMethod = findMappedClassMethod(clazz, setterName);
 
             if (!clazzField.isTransientAnnotated()) {
                 if (clazzMethod.getResult() != null) {
@@ -87,11 +84,8 @@ class ReflectionUtil {
                 break;
             }
 
-            ReflectionFindResult<Field> clazzField =
-                    findMappedClassField(clazz, field);
-
-            ReflectionFindResult<FastMethod> clazzMethod =
-                    findMappedClassMethodWithNoArguments(clazz, getterName);
+            ReflectionFindResult<Field> clazzField = findMappedClassField(clazz, field);
+            ReflectionFindResult<FastMethod> clazzMethod = findMappedClassMethodWithNoArguments(clazz, getterName);
 
             if (!clazzField.isTransientAnnotated()) {
                 if (clazzMethod.getResult() != null) {
@@ -177,8 +171,7 @@ class ReflectionUtil {
             }
 
             for (Field field : clazz.getDeclaredFields()) {
-                if (!result.containsKey(field.getName())
-                        && field.getAnnotation(Transient.class) == null) {
+                if (!result.containsKey(field.getName()) && field.getAnnotation(Transient.class) == null) {
                     result.put(field.getName(), field);
                 }
             }
@@ -194,8 +187,7 @@ class ReflectionUtil {
 
         for (Method clazzMethod : clazz.getDeclaredMethods()) {
             if (clazzMethod.getName().equals(method)) {
-                return new ReflectionFindResult<FastMethod>(fastClazz.getMethod(clazzMethod),
-                        false);
+                return new ReflectionFindResult<FastMethod>(fastClazz.getMethod(clazzMethod), false);
             }
         }
 
@@ -206,12 +198,10 @@ class ReflectionUtil {
         return FastClass.create(clazz);
     }
 
-    private static ReflectionFindResult<Field> findMappedClassField(Class<?> clazz,
-                                                                    String field) {
+    private static ReflectionFindResult<Field> findMappedClassField(Class<?> clazz, String field) {
         try {
             Field clazzField = clazz.getDeclaredField(field);
-            return new ReflectionFindResult<Field>(clazzField,
-                    clazzField.getAnnotation(Transient.class) != null);
+            return new ReflectionFindResult<Field>(clazzField, clazzField.getAnnotation(Transient.class) != null);
         } catch (NoSuchFieldException ignored) {
             return new ReflectionFindResult<Field>();
         }

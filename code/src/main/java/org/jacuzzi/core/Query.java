@@ -6,22 +6,22 @@ package org.jacuzzi.core;
 class Query {
     /**
      * Use following jokers:
-     *  ?f: field name
-     *  ?t: table name
+     * ?f: field name
+     * ?t: table name
      *
      * @param query String with jokers
-     * @param args Parameters to be substituted instead of jokers
+     * @param args  Parameters to be substituted instead of jokers
      * @return {@code query} with substitutions.
      */
     @SuppressWarnings("AccessOfSystemProperties")
-    public static String format(String query, Object ... args) {
+    public static String format(String query, Object... args) {
         boolean tableQuotation = Boolean.parseBoolean(System.getProperty("jacuzzi.tableQuotation"));
         boolean fieldQuotation = Boolean.parseBoolean(System.getProperty("jacuzzi.fieldQuotation"));
 
         StringBuilder result = new StringBuilder(query.length() + 32);
         int index = 0;
 
-        for (int i = 0; i < query.length(); i++) {
+        for (int i = 0; i < query.length(); ++i) {
             // Starts as joker?
             if (i + 1 < query.length() && query.charAt(i) == '?') {
                 // Replace field?

@@ -7,15 +7,15 @@ import java.util.*;
 public class ArrayMap<K, V> implements Map<K, V> {
     private static final int MAX_CAPACITY = 64;
 
-    private int size = 0;
+    private int size;
 
     private final K[] keys;
     private final int[] hashCodes;
     private final V[] values;
 
-    private transient volatile Set<Entry<K, V>> entrySet = null;
-    private transient volatile Set<K> keySet = null;
-    private transient volatile Collection<V> valuesCollection = null;
+    private transient volatile Set<Entry<K, V>> entrySet;
+    private transient volatile Set<K> keySet;
+    private transient volatile Collection<V> valuesCollection;
 
     @SuppressWarnings("unchecked")
     public ArrayMap(int capacity) {
@@ -28,7 +28,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
     public ArrayMap(Map<? extends K, ? extends V> map) {
         int mapSize = map.size();
         if (mapSize > MAX_CAPACITY) {
-            throw new IllegalArgumentException("ArrayMap can have more than " + MAX_CAPACITY + " elements, but tried to have " + mapSize + ".");
+            throw new IllegalArgumentException("ArrayMap can have more than " + MAX_CAPACITY + " elements, but tried to have " + mapSize + '.');
         }
 
         keys = (K[]) new Object[mapSize];
@@ -51,7 +51,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
     @Override
     public boolean containsKey(Object key) {
         int keyHash = key == null ? 0 : key.hashCode();
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < size; ++i) {
             if (same(keyHash, key, hashCodes[i], keys[i])) {
                 return true;
             }
@@ -61,7 +61,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
     @Override
     public boolean containsValue(Object value) {
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < size; ++i) {
             if (same(value, values[i])) {
                 return true;
             }
@@ -72,7 +72,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
     @Override
     public V get(Object key) {
         int keyHash = key == null ? 0 : key.hashCode();
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < size; ++i) {
             if (same(keyHash, key, hashCodes[i], keys[i])) {
                 return values[i];
             }
@@ -83,7 +83,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
     @Override
     public V put(K key, V value) {
         int keyHash = key == null ? 0 : key.hashCode();
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < size; ++i) {
             if (same(keyHash, key, hashCodes[i], keys[i])) {
                 V result = values[i];
                 values[i] = value;
@@ -102,7 +102,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
     @Override
     public V remove(Object key) {
         int keyHash = key == null ? 0 : key.hashCode();
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < size; ++i) {
             if (same(keyHash, key, hashCodes[i], keys[i])) {
                 V result = values[i];
                 System.arraycopy(keys, i + 1, keys, i, size - (i + 1));
@@ -117,7 +117,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public void putAll(@Nonnull Map<? extends K, ? extends V> m) {
+    public final void putAll(@Nonnull Map<? extends K, ? extends V> m) {
         for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
             put(e.getKey(), e.getValue());
     }
@@ -248,7 +248,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
     private class ArrayMapEntryIterator implements Iterator<Entry<K, V>> {
         private int position;
 
-        public ArrayMapEntryIterator(int position) {
+        private ArrayMapEntryIterator(int position) {
             this.position = position;
         }
 
@@ -272,21 +272,21 @@ public class ArrayMap<K, V> implements Map<K, V> {
     public static void test() {
         int result = 0;
 
-        for (int i = 0; i < 10000000; i++) {
+        for (int i = 0; i < 10000000; ++i) {
             Map<Integer, Integer> z = new HashMap<Integer, Integer>();
             z.put(i, i * i);
             z.put(i + 1, i * i + 1);
             result += z.size();
         }
 
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 100000; ++i) {
             Map<Integer, Integer> z = new HashMap<Integer, Integer>();
 
-            for (int j = 0; j < 4; j++) {
+            for (int j = 0; j < 4; ++j) {
                 z.put(j * j, j);
             }
 
-            for (int j = 0; j < 1000; j++) {
+            for (int j = 0; j < 1000; ++j) {
                 if (z.containsKey(j)) {
                     result++;
                 }

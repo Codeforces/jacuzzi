@@ -50,8 +50,8 @@ class CachedTypeOracle<T> extends TypeOracle<T> {
     }
 
     @Override
-    String getFieldList(boolean includeId, boolean useTablePrefix) {
-        return typeOracle.getFieldList(includeId, useTablePrefix);
+    String getFieldList(boolean includeId, boolean useTablePrefix, OperationType operationType) {
+        return typeOracle.getFieldList(includeId, useTablePrefix, operationType);
     }
 
     @Override
@@ -60,7 +60,7 @@ class CachedTypeOracle<T> extends TypeOracle<T> {
     }
 
     @Override
-    Object[] getValueListForInsert(boolean includeId, T instance) {
+    List<Object> getValueListForInsert(boolean includeId, T instance) {
         return typeOracle.getValueListForInsert(includeId, instance);
     }
 
@@ -80,7 +80,7 @@ class CachedTypeOracle<T> extends TypeOracle<T> {
     }
 
     @Override
-    Object[] getQuerySetArguments(T instance) {
+    List<Object> getQuerySetArguments(T instance) {
         return typeOracle.getQuerySetArguments(instance);
     }
 

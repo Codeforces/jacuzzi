@@ -5,6 +5,7 @@ import net.sf.cglib.reflect.FastMethod;
 import org.apache.log4j.Logger;
 import org.jacuzzi.mapping.Id;
 import org.jacuzzi.mapping.MappedTo;
+import org.jacuzzi.mapping.OperationControl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -39,35 +40,48 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         }
 
         String[] fieldNames = ReflectionUtil.findFields(clazz);
-        Map<String, java.lang.reflect.Field> fieldsMap = ReflectionUtil.findFieldsMap(clazz);
+        Map<String, java.lang.reflect.Field> fieldByName = ReflectionUtil.findFieldsMap(clazz);
         Field internalIdField = null;
 
         for (String fieldName : fieldNames) {
             Field field = new Field(fieldName);
+            java.lang.reflect.Field javaField = fieldByName.get(fieldName);
 
             field.setSetter(ReflectionUtil.findSetter(clazz, fieldName));
             field.setGetter(ReflectionUtil.findGetter(clazz, fieldName));
 
             boolean isId = false;
             String column = fieldName;
-            if (fieldsMap.containsKey(fieldName)) {
-                MappedTo mappedTo = fieldsMap.get(fieldName).getAnnotation(MappedTo.class);
+
+            if (javaField != null) {
+                MappedTo mappedTo = javaField.getAnnotation(MappedTo.class);
                 if (mappedTo != null) {
                     column = mappedTo.value();
                 }
-                isId = fieldsMap.get(fieldName).getAnnotation(Id.class) != null;
+
+                OperationControl operationControl = javaField.getAnnotation(OperationControl.class);
+                if (operationControl != null) {
+                    field.setIgnoreSelect(operationControl.ignoreSelect());
+                    field.setIgnoreInsert(operationControl.ignoreInsert());
+                    field.setIgnoreUpdate(operationControl.ignoreUpdate());
+                }
+
+                isId = javaField.getAnnotation(Id.class) != null;
             }
+
             field.setColumn(column);
 
             if (field.isValid()) {
-                if (!isId) {
-                    isId = field.getSetter().getJavaMethod().getAnnotation(Id.class) != null;
-                    isId = isId || field.getSetter().getJavaMethod().getAnnotation(Id.class) != null;
-                }
+                isId = isId || field.getSetter().getJavaMethod().getAnnotation(Id.class) != null;
+                isId = isId || field.getGetter().getJavaMethod().getAnnotation(Id.class) != null;
 
                 field.setId(isId);
 
                 if (isId) {
+                    if (field.isIgnoreSelect() || field.isIgnoreInsert() || field.isIgnoreUpdate()) {
+                        throw new MappingException("Can't apply OperationControl to ID field.");
+                    }
+
                     internalIdField = field;
                 }
 
@@ -105,6 +119,10 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         result.append("SET");
 
         for (Field field : fields) {
+            if (field.isIgnoreUpdate()) {
+                continue;
+            }
+
             result.append(Query.format(" ?f = ?,", field.getColumn()));
         }
 
@@ -129,9 +147,8 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         return Query.format(result.toString(), fields);
     }
 
-
     @Override
-    public String getFieldList(boolean includeId, boolean useTablePrefix) {
+    public String getFieldList(boolean includeId, boolean useTablePrefix, OperationType operationType) {
         if (fields.isEmpty()) {
             throw new MappingException("Nothing to set for class " + clazz + '.');
         }
@@ -139,16 +156,21 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         StringBuilder result = new StringBuilder();
 
         for (Field field : fields) {
-            if (!field.isId() || includeId) {
-                if (result.length() > 0) {
-                    result.append(", ");
-                }
+            if (field.isId() && !includeId
+                    || operationType == OperationType.SELECT && field.isIgnoreSelect()
+                    || operationType == OperationType.INSERT && field.isIgnoreInsert()
+                    || operationType == OperationType.UPDATE && field.isIgnoreUpdate()) {
+                continue;
+            }
 
-                if (useTablePrefix) {
-                    result.append(Query.format("?t.?f", tableName, field.getColumn()));
-                } else {
-                    result.append(Query.format("?f", field.getColumn()));
-                }
+            if (result.length() > 0) {
+                result.append(", ");
+            }
+
+            if (useTablePrefix) {
+                result.append(Query.format("?t.?f", tableName, field.getColumn()));
+            } else {
+                result.append(Query.format("?f", field.getColumn()));
             }
         }
 
@@ -164,7 +186,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         StringBuilder result = new StringBuilder();
 
         for (Field field : fields) {
-            if (field.isId() && !includeId) {
+            if (field.isId() && !includeId || field.isIgnoreInsert()) {
                 continue;
             }
 
@@ -183,15 +205,16 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
     }
 
     @Override
-    Object[] getValueListForInsert(boolean includeId, T instance) {
-        Object[] result = new Object[fields.size() - (includeId ? 0 : 1)];
+    List<Object> getValueListForInsert(boolean includeId, T instance) {
+        List<Object> result = new ArrayList<Object>(fields.size());
 
         try {
-            int index = 0;
             for (Field field : fields) {
-                if (!field.isId() || includeId) {
-                    result[index++] = field.getGetter().invoke(instance, EMPTY_OBJECT_ARRAY);
+                if (field.isId() && !includeId || field.isIgnoreInsert()) {
+                    continue;
                 }
+
+                result.add(field.getGetter().invoke(instance, EMPTY_OBJECT_ARRAY));
             }
         } catch (InvocationTargetException e) {
             throw new MappingException("Can't invoke getter for class " + clazz.getName() + '.', e);
@@ -220,7 +243,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
             return false;
         }
 
-        if (id instanceof String && "".equals(id)) {
+        if (id instanceof String && ((String) id).isEmpty()) {
             return false;
         }
 
@@ -228,18 +251,20 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
     }
 
     @Override
-    public Object[] getQuerySetArguments(T instance) {
+    public List<Object> getQuerySetArguments(T instance) {
         if (fields.isEmpty()) {
             throw new MappingException("Nothing to set for class " + clazz + '.');
         }
 
-        Object[] result = new Object[fields.size()];
-
-        int index = 0;
+        List<Object> result = new ArrayList<Object>(fields.size() + 1);
 
         for (Field field : fields) {
+            if (field.isIgnoreUpdate()) {
+                continue;
+            }
+
             try {
-                result[index++] = field.getGetter().invoke(instance, EMPTY_OBJECT_ARRAY);
+                result.add(field.getGetter().invoke(instance, EMPTY_OBJECT_ARRAY));
             } catch (InvocationTargetException e) {
                 throw new MappingException("Can't invoke getter " + field.getGetter() + '.', e);
             }
@@ -285,12 +310,12 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         }
     }
 
-    private String toString(Row row) {
+    private static String toString(Row row) {
         StringBuilder result = new StringBuilder("{");
         boolean first = true;
         for (Map.Entry<String, Object> entry : row.entrySet()) {
             if (first) {
-                first= false;
+                first = false;
             } else {
                 result.append(',');
             }
@@ -305,6 +330,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         return result.toString();
     }
 
+    @SuppressWarnings({"OverlyComplexMethod", "OverlyLongMethod"})
     @Override
     public T convertFromRow(Row row) {
         Set<String> columns = row.keySet();
@@ -390,6 +416,13 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         private String name;
         private String column;
         private boolean id;
+        private boolean ignoreSelect;
+        private boolean ignoreInsert;
+        private boolean ignoreUpdate;
+
+        private Field(String name) {
+            this.name = name;
+        }
 
         public FastMethod getSetter() {
             return setter;
@@ -415,14 +448,6 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
             this.name = name;
         }
 
-        private Field(String name) {
-            this.name = name;
-        }
-
-        private boolean isValid() {
-            return name != null && setter != null && getter != null && column != null;
-        }
-
         public String getColumn() {
             return column;
         }
@@ -437,6 +462,36 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
 
         public boolean isId() {
             return id;
+        }
+
+        public boolean isIgnoreSelect() {
+            return ignoreSelect;
+        }
+
+        public void setIgnoreSelect(boolean ignoreSelect) {
+            this.ignoreSelect = ignoreSelect;
+        }
+
+        public boolean isIgnoreInsert() {
+            return ignoreInsert;
+        }
+
+        public void setIgnoreInsert(boolean ignoreInsert) {
+            this.ignoreInsert = ignoreInsert;
+        }
+
+        public boolean isIgnoreUpdate() {
+            return ignoreUpdate;
+        }
+
+        public void setIgnoreUpdate(boolean ignoreUpdate) {
+            this.ignoreUpdate = ignoreUpdate;
+        }
+
+        private boolean isValid() {
+            return name != null && !name.isEmpty()
+                    && column != null && !column.isEmpty()
+                    && setter != null && getter != null;
         }
     }
 }

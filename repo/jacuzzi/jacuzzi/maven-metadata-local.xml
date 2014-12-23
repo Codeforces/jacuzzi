@@ -2,9 +2,11 @@
 <metadata>
   <groupId>jacuzzi</groupId>
   <artifactId>jacuzzi</artifactId>
-  <version>0.0.29-SNAPSHOT</version>
+  <version>0.0.36-SNAPSHOT</version>
   <versioning>
     <versions>
+      <version>0.0.27-SNAPSHOT</version>
+      <version>0.0.28-SNAPSHOT</version>
       <version>0.0.29-SNAPSHOT</version>
       <version>0.0.30-SNAPSHOT</version>
       <version>0.0.31-SNAPSHOT</version>
@@ -12,7 +14,8 @@
       <version>0.0.33-SNAPSHOT</version>
       <version>0.0.34-SNAPSHOT</version>
       <version>0.0.35-SNAPSHOT</version>
+      <version>0.0.36-SNAPSHOT</version>
     </versions>
-    <lastUpdated>20141202155615</lastUpdated>
+    <lastUpdated>20141223150855</lastUpdated>
   </versioning>
 </metadata>

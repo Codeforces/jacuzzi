@@ -279,7 +279,7 @@ class PreparedStatementUtil {
     }
 
     private static void setupPreparedStatementParameters(PreparedStatement statement, Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
+        for (int i = 0; i < args.length; ++i) {
             if (args[i] instanceof Enum) {
                 statement.setString(i + 1, args[i].toString());
                 continue;
