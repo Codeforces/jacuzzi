@@ -42,7 +42,7 @@ class DataSourceUtil {
      * @param dataSource DataSource to get new connection.
      */
     public void attachConnection(DataSource dataSource) {
-        final Attachment attachment = attachments.get().get(dataSource);
+        Attachment attachment = attachments.get().get(dataSource);
 
         if (attachment == null) {
             try {
@@ -58,7 +58,7 @@ class DataSourceUtil {
     /**
      * Detaches connection from the current thread.
      */
-    public void detachConnection(final DataSource dataSource) {
+    public void detachConnection(DataSource dataSource) {
         internalDetachConnection(dataSource, false);
     }
 
@@ -67,7 +67,7 @@ class DataSourceUtil {
     }
 
     private void internalDetachConnection(DataSource dataSource, boolean throwOnNonClose) {
-        final Attachment attachment = attachments.get().get(dataSource);
+        Attachment attachment = attachments.get().get(dataSource);
 
         if (attachment == null) {
             throw new DatabaseException("detachConnection() called but attached connection not found.");
@@ -77,13 +77,13 @@ class DataSourceUtil {
             throw new DatabaseException("Attached connection expired. You shouldn't do such long attachments.");
         }
 
-        final int attachCount = attachment.decrementAttachCount();
+        int attachCount = attachment.decrementAttachCount();
         if (attachCount == 0) {
             attachments.get().remove(dataSource);
             closeConnection(dataSource, attachment.connection);
         } else {
             if (throwOnNonClose) {
-                throw new DatabaseException("Expected connection to be completely detached, but attachCount=" + attachCount + ".");
+                throw new DatabaseException("Expected connection to be completely detached, but attachCount=" + attachCount + '.');
             }
         }
     }
@@ -95,7 +95,7 @@ class DataSourceUtil {
      */
     private static Connection getConnection(DataSource dataSource, boolean expectAttached) {
         try {
-            final Attachment attachment = attachments.get().get(dataSource);
+            Attachment attachment = attachments.get().get(dataSource);
 
             if (attachment != null) {
                 if (attachment.expirationTime < System.currentTimeMillis()) {

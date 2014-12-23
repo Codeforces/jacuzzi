@@ -4,7 +4,6 @@ import javax.annotation.Nonnull;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.*;
 
 /**
@@ -75,7 +74,7 @@ public class Row implements Map<String, Object> {
         } finally {
             try {
                 resultSet.close();
-            } catch (SQLException e) {
+            } catch (SQLException ignored) {
                 // No operations.
             }
         }
@@ -93,7 +92,7 @@ public class Row implements Map<String, Object> {
     private static void addRowFromResultSet(ResultSet resultSet, List<Row> result, ResultSetMetaData metaData) {
         try {
             Row row = new Row(metaData.getColumnCount());
-            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+            for (int i = 1; i <= metaData.getColumnCount(); ++i) {
                 row.put(metaData.getColumnLabel(i), resultSet.getObject(i));
             }
             result.add(row);

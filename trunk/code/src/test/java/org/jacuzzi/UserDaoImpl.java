@@ -15,11 +15,11 @@ public class UserDaoImpl extends GenericDaoImpl<User, Long> implements UserDao {
 
     @Override
     public List<User> findByName(String name) {
-        return findBy("name=?", name);
+        return findBy("name = ?", name);
     }
 
     @Override
     public User findOnlyByName(String name) {
-        return findOnlyBy(true, "name=?", name);
+        return findOnlyBy(true, "name = ?", name);
     }
 }

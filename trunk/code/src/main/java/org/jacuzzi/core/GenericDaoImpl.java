@@ -104,7 +104,7 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
             }
 
             String table = typeOracle.getTableName();
-            query = "SELECT " + typeOracle.getFieldList(true, true) + Query.format(" FROM ?t ", table) + query;
+            query = "SELECT " + typeOracle.getFieldList(true, true, TypeOracle.OperationType.SELECT) + Query.format(" FROM ?t ", table) + query;
         }
 
         List<Row> rows = jacuzzi.findRows(query, args);
@@ -166,7 +166,7 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
             return;
         }
 
-        Long count = (Long) jacuzzi.findOne(Query.format("SELECT COUNT(*) FROM ?t WHERE ?f = ?",
+        Long count = (Long) jacuzzi.findOne(Query.format("SELECT COUNT(1) FROM ?t WHERE ?f = ?",
                 typeOracle.getTableName(), typeOracle.getIdColumn()), typeOracle.getIdValue(object));
 
         if (count == 0) {
@@ -179,8 +179,9 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
             return;
         }
 
-        throw new MappingException("There are more than one instance of " +
-                getTypeClass() + " with id = " + typeOracle.getIdValue(object) + '.');
+        throw new MappingException(String.format(
+                "There are more than one instance of %s with id = %s.", getTypeClass(), typeOracle.getIdValue(object)
+        ));
     }
 
     @Override
@@ -192,11 +193,11 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         boolean includeId = typeOracle.hasReasonableId(object);
 
         StringBuilder query = new StringBuilder(Query.format("INSERT INTO ?t ", typeOracle.getTableName()));
-        query.append('(').append(typeOracle.getFieldList(includeId, false)).append(") ");
+        query.append('(').append(typeOracle.getFieldList(includeId, false, TypeOracle.OperationType.INSERT)).append(") ");
         query.append("VALUES (").append(typeOracle.getValuesPatternListForInsert(includeId, object)).append(')');
 
         Jacuzzi.InsertResult result =
-                jacuzzi.insert(query.toString(), typeOracle.getValueListForInsert(includeId, object));
+                jacuzzi.insert(query.toString(), typeOracle.getValueListForInsert(includeId, object).toArray());
 
         if (result.getCount() == 1) {
             Collection<Object> keys = result.getGeneratedKeysForOneRow().values();
@@ -237,7 +238,7 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         }
 
         StringBuilder query = new StringBuilder(Query.format("INSERT INTO ?t ", typeOracle.getTableName()));
-        query.append('(').append(typeOracle.getFieldList(includeId, false)).append(") ");
+        query.append('(').append(typeOracle.getFieldList(includeId, false, TypeOracle.OperationType.INSERT)).append(") ");
         query.append("VALUES ");
 
         List<Object> values = new ArrayList<Object>();
@@ -251,14 +252,8 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
             }
 
             query.append('(');
-
             query.append(typeOracle.getValuesPatternListForInsert(includeId, object));
-
-            Object[] valueListForInsert = typeOracle.getValueListForInsert(
-                    includeId && typeOracle.hasReasonableId(object), object
-            );
-            values.addAll(Arrays.asList(valueListForInsert));
-
+            values.addAll(typeOracle.getValueListForInsert(includeId && typeOracle.hasReasonableId(object), object));
             query.append(')');
         }
 
@@ -273,7 +268,7 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         List<Row> generatedKeys = result.getGeneratedKeys();
         if (!generatedKeys.isEmpty()) {
             if (generatedKeys.size() == objects.size()) {
-                for (int i = 0; i < generatedKeys.size(); i++) {
+                for (int i = 0; i < generatedKeys.size(); ++i) {
                     Collection<Object> keys = result.getGeneratedKeysForRow(i).values();
 
                     if (keys.size() == 1) {
@@ -300,12 +295,10 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
         query.append(typeOracle.getQuerySetSql());
         query.append(Query.format(" WHERE ?f = ?", typeOracle.getIdColumn()));
 
-        Object[] setArguments = typeOracle.getQuerySetArguments(object);
-        Object[] arguments = new Object[setArguments.length + 1];
-        System.arraycopy(setArguments, 0, arguments, 0, setArguments.length);
-        arguments[arguments.length - 1] = typeOracle.getIdValue(object);
+        List<Object> arguments = typeOracle.getQuerySetArguments(object);
+        arguments.add(typeOracle.getIdValue(object));
 
-        if (jacuzzi.execute(query.toString(), arguments) != 1) {
+        if (jacuzzi.execute(query.toString(), arguments.toArray()) != 1) {
             throw new DatabaseException("Can't update instance of class " + getTypeClass().getName()
                     + " with id " + typeOracle.getIdValue(object) + '.');
         }

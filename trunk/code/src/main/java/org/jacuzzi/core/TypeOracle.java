@@ -18,11 +18,11 @@ public abstract class TypeOracle<T> {
 
     public abstract List<T> convertFromRows(List<Row> rows);
 
-    abstract String getFieldList(boolean includeId, boolean useTablePrefix);
+    abstract String getFieldList(boolean includeId, boolean useTablePrefix, OperationType operationType);
 
     abstract String getValuesPatternListForInsert(boolean includeId, T instance);
 
-    abstract Object[] getValueListForInsert(boolean includeId, T instance);
+    abstract List<Object> getValueListForInsert(boolean includeId, T instance);
 
     abstract boolean hasReasonableId(T instance);
 
@@ -34,7 +34,7 @@ public abstract class TypeOracle<T> {
      */
     public abstract String getQueryFindSql(String[] fields);
 
-    abstract Object[] getQuerySetArguments(T instance);
+    abstract List<Object> getQuerySetArguments(T instance);
 
     public abstract void setIdValue(T instance, Object value);
 
@@ -93,5 +93,11 @@ public abstract class TypeOracle<T> {
         }
 
         throw new NoSuchElementException("Can't find element " + s + " in " + expectedClazz + '.');
+    }
+
+    public enum OperationType {
+        SELECT,
+        INSERT,
+        UPDATE
     }
 }
