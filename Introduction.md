@@ -1,0 +1,119 @@
+# Introduction #
+
+It is very easy to use jacuzzi. You don't need to spend a lot of time to learn how to use it. Think about it as a some wrapping code around JDBC.
+
+
+# Details #
+
+This is the sample code how to create and use jacuzzi DAOs:
+```
+        // We are recommending to use c3p0
+        DataSource source = getDataSourceUsingApplicationSpecificMethod();
+
+        // Create or get from cache DAOs
+        UserDao userDao = new UserDao(source);
+        EventDao eventDao = new EventDao(source);
+        GroupDao groupDao = new GroupDao(source);
+
+        // Get user by primary key
+        User mike = userDao.find(1L);
+        
+        // Write your own methods in DAO to extend basic functionality
+        List<User> mikeFriends = userDao.findFriends(mike);
+
+        // Another example, some kind of mapping
+        Group mikeGroup = userDao.findGroup(mike);
+        
+        // User attached to event with id == 1
+        User user = userDao.findByEvent(eventDao.find(1L));
+```
+
+# How to create DAO #
+It is very easy too. Just extend GenericDaoImpl<?,?> and your DAO is ready. It this example we created DAO for entity ForumPost and primary key (id) of type String.
+```
+public class ForumPostDao extends GenericDaoImpl<ForumPost, String> {
+    protected ForumPostDao(DataSource source) {
+        super(source);
+    }
+}
+```
+
+Usually it is good idea to pass dataSource into DAO via dependency injection or via factory:
+```
+public class ForumPostDao extends GenericDaoImpl<ForumPost, String> {
+    protected ForumPostDao() {
+        super(ApplicationDataSourceFactory.getInstance());
+    }
+}
+```
+
+Below there is more interesting example of the DAO implementation.
+```
+public class UserDao extends GenericDaoImpl<User, Long> {
+    protected UserDao(DataSource source) {
+        super(source);
+    }
+
+    public User find(long id) {
+        return super.find(id);
+    }
+    
+    public List<User> findByEmail(String email) {
+        return findBy("email=?", email);
+    }
+
+    public boolean register(User user, String password) {
+        beginTransaction();
+
+        try {
+            insert(user);
+
+            if (1 != getJacuzzi().execute("UPDATE User SET password=SHA1(?) WHERE id=?", password, user.getId())) {
+                throw new DatabaseException("Can't set password for user [id=" + user.getId() + "].");
+            }
+            commit();
+        } catch (Exception e) {
+            logger.error("Can't register user.", e);
+            rollback();
+            return false;
+        }
+
+        return true;
+    }
+}
+```
+
+# Mapping #
+In the simplest case all you need is to mark one field with @Id in your entity class. Currently, composite primary keys are not supported.
+```
+public class User {
+    @Id
+    private long id;
+    
+    private String name;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+```
+
+You can use @MappedTo annotation to specify table name (if you annotated class) or column name (if you annotated field).
+
+Also it is possible to use @Transient for classes or fields to specify the fact that class (field) not mapped. Usually @Transient used for some superclasses.
+
+Your entities should have getter and setter (not necessary public) for mapped fields.
+
+In 0.0.36-SNAPSHOT version added @OperationControl annotation for fields (and for getters/setters in future updates). It has 3 flags: ignoreSelect, ignoreInsert and ignoreUpdate. Default value of all flags is false. True value of each flag means that annotated field will be ignored when executing corresponding operation.
