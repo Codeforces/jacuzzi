@@ -64,18 +64,20 @@ class PreparedStatementUtil {
             throws SQLException {
         if (LOG_SLOW_QUERIES || DEBUG_QUERIES) {
             long before = System.currentTimeMillis();
+            int result = 0;
             try {
-                return statement.executeUpdate();
+                result = statement.executeUpdate();
+                return result;
             } finally {
                 long duration = System.currentTimeMillis() - before;
                 if (LOG_SLOW_QUERIES && duration > PRINT_QUERY_TIMES_THRESHOLD) {
                     logger.warn(String.format(
-                            "Query \"%s\" with parameters [%s] takes %d ms.", query, formatParameters(args), duration
+                            "Query \"%s\" with parameters [%s] takes %d ms, updated %d rows.", query, formatParameters(args), duration, result
                     ));
                 }
                 if (DEBUG_QUERIES) {
                     logger.debug(String.format(
-                            "Query \"%s\" with parameters [%s] takes %d ms.", query, formatParameters(args), duration
+                            "Query \"%s\" with parameters [%s] takes %d ms, updated %d rows.", query, formatParameters(args), duration, result
                     ));
                 }
             }

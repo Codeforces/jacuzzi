@@ -13,13 +13,6 @@
     <packaging>jar</packaging>
     <version>0.0.36-SNAPSHOT</version>
     <name>jacuzzi</name>
-    <repositories>
-        <repository>
-            <id>codegame.sgu.ru-snapshots</id>
-            <name>codegame.sgu.ru-snapshots</name>
-            <url>http://codegame.sgu.ru:8081/artifactory/ext-releases-local</url>
-        </repository>
-    </repositories>
     <url>http://code.google.com/p/jacuzzi</url>
     <developers>
         <developer>
@@ -34,8 +27,8 @@
         </developer>
     </developers>
     <issueManagement>
-        <system>Google Code</system>
-        <url>http://code.google.com/p/jacuzzi/issues/list</url>
+        <system>GitHub Issues</system>
+        <url>https://github.com/Codeforces/jacuzzi/issues</url>
     </issueManagement>
     <licenses>
         <license>
@@ -45,9 +38,9 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:svn:http://jacuzzi.googlecode.com/svn/trunk</connection>
-        <developerConnection>scm:svn:https://jacuzzi.googlecode.com/svn/trunk</developerConnection>
-        <url>http://jacuzzi.googlecode.com/svn/trunk/</url>
+        <url>https://github.com/Codeforces/jacuzzi</url>
+        <connection>scm:git:git://github.com/Codeforces/jacuzzi.git</connection>
+        <developerConnection>scm:git:git@github.com:Codeforces/jacuzzi.git</developerConnection>
     </scm>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -105,13 +98,13 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.11</version>
+            <version>4.12</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
-            <version>2.3.1</version>
+            <version>2.3.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -123,7 +116,7 @@
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>annotations</artifactId>
-            <version>2.0.2</version>
+            <version>3.0.1u2</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
