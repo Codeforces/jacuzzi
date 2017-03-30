@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<metadata>
+<metadata modelVersion="1.1.0">
   <groupId>jacuzzi</groupId>
   <artifactId>jacuzzi</artifactId>
   <version>0.0.36-SNAPSHOT</version>
@@ -7,6 +7,30 @@
     <snapshot>
       <localCopy>true</localCopy>
     </snapshot>
-    <lastUpdated>20141223150855</lastUpdated>
+    <lastUpdated>20170330110351</lastUpdated>
+    <snapshotVersions>
+      <snapshotVersion>
+        <classifier>javadoc</classifier>
+        <extension>jar</extension>
+        <value>0.0.36-SNAPSHOT</value>
+        <updated>20170330110351</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <classifier>sources</classifier>
+        <extension>jar</extension>
+        <value>0.0.36-SNAPSHOT</value>
+        <updated>20170330110351</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <extension>jar</extension>
+        <value>0.0.36-SNAPSHOT</value>
+        <updated>20170330110351</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>0.0.36-SNAPSHOT</value>
+        <updated>20170330110351</updated>
+      </snapshotVersion>
+    </snapshotVersions>
   </versioning>
 </metadata>
