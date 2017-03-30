@@ -4,6 +4,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
+@SuppressWarnings("ForLoopWithMissingComponent")
 public class ArrayMap<K, V> implements Map<K, V> {
     private static final int MAX_CAPACITY = 64;
 
@@ -28,7 +29,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
     public ArrayMap(Map<? extends K, ? extends V> map) {
         int mapSize = map.size();
         if (mapSize > MAX_CAPACITY) {
-            throw new IllegalArgumentException("ArrayMap can have more than " + MAX_CAPACITY + " elements, but tried to have " + mapSize + '.');
+            throw new IllegalArgumentException("ArrayMap can have no more than " + MAX_CAPACITY + " elements, but tried to have " + mapSize + '.');
         }
 
         keys = (K[]) new Object[mapSize];
@@ -50,76 +51,138 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
     @Override
     public boolean containsKey(Object key) {
-        int keyHash = key == null ? 0 : key.hashCode();
-        for (int i = 0; i < size; ++i) {
-            if (same(keyHash, key, hashCodes[i], keys[i])) {
-                return true;
+        if (key == null) {
+            for (int i = size; --i >= 0; ) {
+                if (keys[i] == null) {
+                    return true;
+                }
+            }
+        } else {
+            int hashCode = key.hashCode();
+
+            for (int i = size; --i >= 0; ) {
+                if (same(hashCode, key, hashCodes[i], keys[i])) {
+                    return true;
+                }
             }
         }
+
         return false;
     }
 
     @Override
     public boolean containsValue(Object value) {
-        for (int i = 0; i < size; ++i) {
-            if (same(value, values[i])) {
-                return true;
+        if (value == null) {
+            for (int i = size; --i >= 0; ) {
+                if (values[i] == null) {
+                    return true;
+                }
+            }
+        } else {
+            for (int i = size; --i >= 0; ) {
+                if (same(value, values[i])) {
+                    return true;
+                }
             }
         }
+
         return false;
     }
 
     @Override
     public V get(Object key) {
-        int keyHash = key == null ? 0 : key.hashCode();
-        for (int i = 0; i < size; ++i) {
-            if (same(keyHash, key, hashCodes[i], keys[i])) {
-                return values[i];
+        if (key == null) {
+            for (int i = size; --i >= 0; ) {
+                if (keys[i] == null) {
+                    return values[i];
+                }
+            }
+        } else {
+            int hashCode = key.hashCode();
+
+            for (int i = size; --i >= 0; ) {
+                if (same(hashCode, key, hashCodes[i], keys[i])) {
+                    return values[i];
+                }
             }
         }
+
         return null;
     }
 
     @Override
     public V put(K key, V value) {
-        int keyHash = key == null ? 0 : key.hashCode();
-        for (int i = 0; i < size; ++i) {
-            if (same(keyHash, key, hashCodes[i], keys[i])) {
-                V result = values[i];
-                values[i] = value;
-                return result;
+        if (key == null) {
+            for (int i = size; --i >= 0; ) {
+                if (keys[i] == null) {
+                    V result = values[i];
+                    values[i] = value;
+                    return result;
+                }
             }
+
+            hashCodes[size] = 0;
+        } else {
+            int hashCode = key.hashCode();
+
+            for (int i = size; --i >= 0; ) {
+                if (same(hashCode, key, hashCodes[i], keys[i])) {
+                    V result = values[i];
+                    values[i] = value;
+                    return result;
+                }
+            }
+
+            hashCodes[size] = hashCode;
         }
 
         keys[size] = key;
-        hashCodes[size] = keyHash;
         values[size] = value;
-        size++;
+        ++size;
 
         return null;
     }
 
     @Override
     public V remove(Object key) {
-        int keyHash = key == null ? 0 : key.hashCode();
-        for (int i = 0; i < size; ++i) {
-            if (same(keyHash, key, hashCodes[i], keys[i])) {
-                V result = values[i];
-                System.arraycopy(keys, i + 1, keys, i, size - (i + 1));
-                System.arraycopy(hashCodes, i + 1, hashCodes, i, size - (i + 1));
-                System.arraycopy(values, i + 1, values, i, size - (i + 1));
-                size--;
-                return result;
+        if (key == null) {
+            for (int i = size; --i >= 0; ) {
+                if (keys[i] == null) {
+                    return remove(i);
+                }
+            }
+        } else {
+            int hashCode = key.hashCode();
+
+            for (int i = size; --i >= 0; ) {
+                if (same(hashCode, key, hashCodes[i], keys[i])) {
+                    return remove(i);
+                }
             }
         }
 
         return null;
     }
 
+    private V remove(int i) {
+        V result = values[i];
+        int length = size - i - 1;
+
+        if (length > 0) {
+            System.arraycopy(keys, i + 1, keys, i, length);
+            System.arraycopy(hashCodes, i + 1, hashCodes, i, length);
+            System.arraycopy(values, i + 1, values, i, length);
+        }
+
+        --size;
+        return result;
+    }
+
     @Override
-    public final void putAll(@Nonnull Map<? extends K, ? extends V> m) {
-        for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
+    public final void putAll(@Nonnull Map<? extends K, ? extends V> map) {
+        for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
             put(e.getKey(), e.getValue());
+        }
     }
 
     @Override
@@ -224,12 +287,14 @@ public class ArrayMap<K, V> implements Map<K, V> {
         return entrySet;
     }
 
-    private boolean same(@Nullable Object a, @Nullable Object b) {
-        return a == b || (a != null && a.equals(b));
+    @SuppressWarnings("ObjectEquality")
+    private static boolean same(@Nonnull Object objectA, @Nullable Object objectB) {
+        return objectA == objectB || objectA.equals(objectB);
     }
 
-    private boolean same(int aHashCode, @Nullable Object a, int bHashCode, @Nullable Object b) {
-        return a == b || (a != null && aHashCode == bHashCode && a.equals(b));
+    @SuppressWarnings("ObjectEquality")
+    private static boolean same(int hashCodeA, @Nonnull Object objectA, int hashCodeB, @Nullable Object objectB) {
+        return objectA == objectB || hashCodeA == hashCodeB && objectA.equals(objectB);
     }
 
     private class ArrayMapEntrySet extends AbstractSet<Entry<K, V>> implements Set<Entry<K, V>> {
@@ -259,7 +324,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
         @Override
         public Entry<K, V> next() {
-            position++;
+            ++position;
             return new AbstractMap.SimpleEntry<K, V>(keys[position - 1], values[position - 1]);
         }
 
@@ -269,7 +334,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
         }
     }
 
-    public static void test() {
+    private static void test() {
         int result = 0;
 
         for (int i = 0; i < 10000000; ++i) {
@@ -288,7 +353,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
             for (int j = 0; j < 1000; ++j) {
                 if (z.containsKey(j)) {
-                    result++;
+                    ++result;
                 }
             }
 
@@ -296,7 +361,6 @@ public class ArrayMap<K, V> implements Map<K, V> {
         }
 
         System.out.println(result);
-
     }
 
     public static void main(String[] args) {
