@@ -1,6 +1,7 @@
 package org.jacuzzi.core;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -9,22 +10,26 @@ import java.util.*;
 /**
  * @author Mike Mirzayanov
  */
-public class Row implements Map<String, Object> {
-    private static final int MAX_ARRAY_MAP_SIZE = 12;
+public class Row implements Map<String, Object>, Serializable {
+    private static final int MAX_ARRAY_MAP_SIZE = 16;
 
-    private final Map<String, Object> delegateMap;
+    final Map<String, Object> delegateMap;
 
     public Row(int capacity) {
         if (capacity <= MAX_ARRAY_MAP_SIZE) {
-            delegateMap = new ArrayMap<String, Object>(capacity);
+            delegateMap = new ArrayMap<>(capacity);
         } else {
-            delegateMap = new HashMap<String, Object>(capacity, 1.0f);
+            delegateMap = new HashMap<>(capacity, 1.0f);
         }
     }
 
     @SuppressWarnings("UnusedDeclaration")
     public Row() {
-        delegateMap = new HashMap<String, Object>();
+        delegateMap = new HashMap<>();
+    }
+
+    Row(ArrayMap<String, Object> arrayMap) {
+        delegateMap = arrayMap;
     }
 
     /**
