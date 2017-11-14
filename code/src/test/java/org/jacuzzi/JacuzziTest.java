@@ -1,7 +1,7 @@
 package org.jacuzzi;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.jacuzzi.core.*;
 import org.junit.Before;
 import org.junit.Test;

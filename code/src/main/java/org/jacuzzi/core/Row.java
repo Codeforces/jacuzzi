@@ -51,7 +51,7 @@ public class Row implements Map<String, Object>, Serializable {
         } finally {
             try {
                 resultSet.close();
-            } catch (SQLException e) {
+            } catch (SQLException ignored) {
                 // No operations.
             }
         }
@@ -133,12 +133,8 @@ public class Row implements Map<String, Object>, Serializable {
 
     @Override
     public Object put(String key, Object value) {
-        if (value != null && value.getClass().equals(java.sql.Timestamp.class)) {
-            value = new Date(((java.sql.Timestamp) value).getTime());
-        }
-
-        if (value != null && value.getClass().equals(java.sql.Date.class)) {
-            value = new Date(((java.sql.Date) value).getTime());
+        if (value instanceof Date) {
+            value = new Date(((Date) value).getTime());
         }
 
         return delegateMap.put(key, value);
@@ -150,8 +146,8 @@ public class Row implements Map<String, Object>, Serializable {
     }
 
     @Override
-    public void putAll(@Nonnull Map<? extends String, ?> m) {
-        delegateMap.putAll(m);
+    public void putAll(@Nonnull Map<? extends String, ?> map) {
+        delegateMap.putAll(map);
     }
 
     @Override

@@ -144,7 +144,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
             result.append("?f=?");
         }
 
-        return Query.format(result.toString(), fields);
+        return Query.format(result.toString(), (Object[]) fields);
     }
 
     @Override

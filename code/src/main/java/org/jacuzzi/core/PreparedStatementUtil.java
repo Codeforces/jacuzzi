@@ -1,6 +1,6 @@
 package org.jacuzzi.core;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Logger;
 
 import javax.sql.DataSource;
@@ -50,7 +50,7 @@ class PreparedStatementUtil {
                     ));
                 }
                 if (DEBUG_QUERIES) {
-                    logger.debug(   String.format(
+                    logger.debug(String.format(
                             "Query \"%s\" with parameters [%s] takes %d ms.", query, formatParameters(args), duration
                     ));
                 }
@@ -66,8 +66,7 @@ class PreparedStatementUtil {
             long before = System.currentTimeMillis();
             int result = 0;
             try {
-                result = statement.executeUpdate();
-                return result;
+                return result = statement.executeUpdate();
             } finally {
                 long duration = System.currentTimeMillis() - before;
                 if (LOG_SLOW_QUERIES && duration > PRINT_QUERY_TIMES_THRESHOLD) {

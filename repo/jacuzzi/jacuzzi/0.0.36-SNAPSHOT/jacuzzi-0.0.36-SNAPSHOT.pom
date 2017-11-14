@@ -13,13 +13,6 @@
     <packaging>jar</packaging>
     <version>0.0.36-SNAPSHOT</version>
     <name>jacuzzi</name>
-    <repositories>
-        <repository>
-            <id>codegame.sgu.ru-snapshots</id>
-            <name>codegame.sgu.ru-snapshots</name>
-            <url>http://codegame.sgu.ru:8081/artifactory/ext-releases-local</url>
-        </repository>
-    </repositories>
     <url>http://code.google.com/p/jacuzzi</url>
     <developers>
         <developer>
@@ -34,8 +27,8 @@
         </developer>
     </developers>
     <issueManagement>
-        <system>Google Code</system>
-        <url>http://code.google.com/p/jacuzzi/issues/list</url>
+        <system>GitHub Issues</system>
+        <url>https://github.com/Codeforces/jacuzzi/issues</url>
     </issueManagement>
     <licenses>
         <license>
@@ -45,9 +38,9 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:svn:http://jacuzzi.googlecode.com/svn/trunk</connection>
-        <developerConnection>scm:svn:https://jacuzzi.googlecode.com/svn/trunk</developerConnection>
-        <url>http://jacuzzi.googlecode.com/svn/trunk/</url>
+        <url>https://github.com/Codeforces/jacuzzi</url>
+        <connection>scm:git:git://github.com/Codeforces/jacuzzi.git</connection>
+        <developerConnection>scm:git:git@github.com:Codeforces/jacuzzi.git</developerConnection>
     </scm>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -57,11 +50,19 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.2</version>
+                <version>3.6.1</version>
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
                     <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.4</version>
+                <configuration>
+                    <additionalparam>-Xdoclint:none</additionalparam>
                 </configuration>
             </plugin>
         </plugins>
@@ -73,9 +74,9 @@
             <version>1.2.17</version>
         </dependency>
         <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.6</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.5</version>
         </dependency>
         <dependency>
             <groupId>cglib</groupId>
@@ -111,7 +112,7 @@
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
-            <version>2.3.1</version>
+            <version>2.3.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -123,7 +124,7 @@
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>annotations</artifactId>
-            <version>2.0.2</version>
+            <version>3.0.1u2</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
