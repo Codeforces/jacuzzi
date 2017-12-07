@@ -9,6 +9,7 @@ import org.jacuzzi.mapping.OperationControl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Mike Mirzayanov
@@ -17,6 +18,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
     private static final Logger logger = Logger.getLogger(TypeOracleImpl.class);
 
     private static final Object[] EMPTY_OBJECT_ARRAY = {};
+    private static final Map<Long, String> LOWER_CASED_COLUMNS_CACHE = new ConcurrentHashMap<>();
 
     private final Class<T> clazz;
     private final FastClass fastClazz;
@@ -330,6 +332,27 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         return result.toString();
     }
 
+    private static final String toLowerCase(String s) {
+        if (s == null) {
+            return null;
+        }
+
+        long hash = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            hash = hash * 103079 + 983 + c;
+        }
+
+        String result = LOWER_CASED_COLUMNS_CACHE.get(hash);
+        if (result != null) {
+            return result;
+        }
+
+        result = s.toLowerCase();
+        LOWER_CASED_COLUMNS_CACHE.putIfAbsent(hash, result);
+        return result;
+    }
+
     @SuppressWarnings({"OverlyComplexMethod", "OverlyLongMethod"})
     @Override
     public T convertFromRow(Row row) {
@@ -338,12 +361,13 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
 
         Map<String, String> columnNameByLowercaseColumnName = new HashMap<String, String>();
         for (String column : fieldByColumn.keySet()) {
-            columnNameByLowercaseColumnName.put(column.toLowerCase(), column);
+            columnNameByLowercaseColumnName.put(toLowerCase(column), column);
         }
 
         for (String column : columns) {
-            if (columnNameByLowercaseColumnName.containsKey(column.toLowerCase())) {
-                Field field = fieldByColumn.get(columnNameByLowercaseColumnName.remove(column.toLowerCase()));
+            String lowerCasedColumn = toLowerCase(column);
+            if (columnNameByLowercaseColumnName.containsKey(lowerCasedColumn)) {
+                Field field = fieldByColumn.get(columnNameByLowercaseColumnName.remove(lowerCasedColumn));
                 try {
                     Object parameter = row.get(column);
                     Class<?> expectedParameterType = field.getSetter().getParameterTypes()[0];

@@ -41,12 +41,19 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
         putAll(map);
     }
 
-    private ArrayMap(K[] keys, V[] values) {
+    ArrayMap(K[] keys, V[] values) {
         this.keys = keys;
         this.hashCodes = new int[keys.length];
         for (int i = 0; i < keys.length; i++) {
             this.hashCodes[i] = keys[i].hashCode();
         }
+        this.values = values;
+        this.size = keys.length;
+    }
+
+    ArrayMap(K[] keys, int[] hashCodes, V[] values) {
+        this.keys = keys;
+        this.hashCodes = hashCodes;
         this.values = values;
         this.size = keys.length;
     }
@@ -364,6 +371,16 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
         return offset;
     }
 
+    public static int toBinaryArray(byte[] bytes, int offset, @Nonnull RowRoll rowRoll) {
+        offset = ByteArrayUtil.writeString(bytes, offset, "ROWS");
+        offset = ByteArrayUtil.writeInt(bytes, offset, rowRoll.size());
+        if (!rowRoll.isEmpty()) {
+            offset = ByteArrayUtil.writeByte(bytes, offset, (byte) 'A');
+            offset = convertRowRollToBinaryArray(bytes, offset, rowRoll);
+        }
+        return offset;
+    }
+
     private static int convertHashMapRowsToBinaryArray(byte[] bytes, int offset, List<Row> rows) {
         try {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -411,7 +428,72 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
         return offset;
     }
 
-    public static List<Row> fromBinaryArray(byte[] bytes) {
+    private static int convertRowRollToBinaryArray(byte[] bytes, int offset, RowRoll rowRoll) {
+        int n = rowRoll.getColumnCount();
+
+        int[] keyTypes = new int[n];
+        Arrays.fill(keyTypes, -1);
+        offset = writeObjectArray(bytes, offset, keyTypes, rowRoll.getKeys());
+
+        int[] valueTypes = new int[n];
+        Arrays.fill(valueTypes, -1);
+        int valueTypeOffset = offset;
+        offset += n;
+
+        for (Object[] values : rowRoll.getValueList()) {
+            offset = writeObjectArray(bytes, offset, valueTypes, values);
+        }
+
+        for (int valueType : valueTypes) {
+            valueTypeOffset = ByteArrayUtil.writeByte(bytes, valueTypeOffset, (byte) valueType);
+        }
+
+        return offset;
+    }
+
+    public static RowRoll toRowRoll(byte[] bytes) {
+        int[] offset = new int[]{0};
+        String header = ByteArrayUtil.readString(bytes, offset);
+        if (!"ROWS".equals(header)) {
+            throw new RuntimeException("Expected 'ROWS'.");
+        }
+
+        int size = ByteArrayUtil.readInt(bytes, offset);
+        if (size == 0) {
+            return new RowRoll();
+        }
+
+        byte type = ByteArrayUtil.readByte(bytes, offset);
+        if (type != 'A') {
+            throw new IllegalStateException("Expected 'A', but '" + (char) type + "' found.");
+        }
+
+        return convertBinaryArrayToRowRoll(bytes, offset, size);
+    }
+
+    private static RowRoll convertBinaryArrayToRowRoll(byte[] bytes, int[] offset, int size) {
+        RowRoll rowRoll = new RowRoll();
+
+        Object[] objectKeys = readObjectArray(bytes, offset, null);
+        String[] keys = new String[objectKeys.length];
+        for (int i = 0; i < objectKeys.length; i++) {
+            keys[i] = (String) objectKeys[i];
+        }
+        rowRoll.setKeys(keys);
+
+        int[] valueTypes = new int[size];
+        for (int i = 0; i < keys.length; i++) {
+            valueTypes[i] = ByteArrayUtil.readByte(bytes, offset);
+        }
+
+        for (int i = 0; i < size; i++) {
+            rowRoll.addValues(readObjectArray(bytes, offset, valueTypes));
+        }
+
+        return rowRoll;
+    }
+
+    public static List<Row> toRows(byte[] bytes) {
         int[] offset = new int[]{0};
         String header = ByteArrayUtil.readString(bytes, offset);
         if (!"ROWS".equals(header)) {

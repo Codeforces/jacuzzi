@@ -25,7 +25,7 @@ public class Jacuzzi {
     /**
      * For each entity class there is correspondent DAO.
      */
-    private final Map<Class<?>, GenericDao<?, ?>> daoCache = new HashMap<Class<?>, GenericDao<?, ?>>();
+    private final Map<Class<?>, GenericDao<?, ?>> daoCache = new HashMap<>();
 
     /**
      * Creates jacuzzi instance by {@code DataSource}.
@@ -161,7 +161,7 @@ public class Jacuzzi {
      */
     public InsertResult insert(String query, Object... args) {
         try {
-            List<Row> generated = new ArrayList<Row>(1);
+            List<Row> generated = new ArrayList<>(1);
             int count = PreparedStatementUtil.execute(dataSource, dataSourceUtil, query, args, generated);
             if (generated.isEmpty()) {
                 List<Row> generatedKeys = new ArrayList<Row>(1);
@@ -212,6 +212,23 @@ public class Jacuzzi {
     public List<Row> findRows(String query, Object... args) {
         try {
             return PreparedStatementUtil.findRows(dataSource, dataSourceUtil, query, args);
+        } catch (SQLException e) {
+            System.err.println(query);
+            throw new DatabaseException(e);
+        }
+    }
+
+    /**
+     * Executes query and returns selected rows.
+     * Use SELECT or SHOW queries here.
+     *
+     * @param query Raw SQL query.
+     * @param args  Arguments to replace "?" jokers in {@code query}.
+     * @return Selected rows as RowRoll.
+     */
+    public RowRoll findRowRoll(String query, Object... args) {
+        try {
+            return PreparedStatementUtil.findRowRoll(dataSource, dataSourceUtil, query, args);
         } catch (SQLException e) {
             System.err.println(query);
             throw new DatabaseException(e);
@@ -348,7 +365,7 @@ public class Jacuzzi {
          */
         @Override
         protected Map<DataSource, Jacuzzi> initialValue() {
-            return new HashMap<DataSource, Jacuzzi>();
+            return new HashMap<>();
         }
     };
 

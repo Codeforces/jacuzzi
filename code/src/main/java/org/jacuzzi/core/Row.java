@@ -39,12 +39,51 @@ public class Row implements Map<String, Object>, Serializable {
      * @return List<Row> Rows in result set.
      */
     static List<Row> readFromResultSet(ResultSet resultSet) {
-        ArrayList<Row> result = new ArrayList<Row>();
+        ArrayList<Row> result = new ArrayList<>();
 
         try {
             ResultSetMetaData metaData = resultSet.getMetaData();
             while (resultSet.next()) {
                 addRowFromResultSet(resultSet, result, metaData);
+            }
+        } catch (SQLException e) {
+            throw new DatabaseException("Can't read the list of rows from the result set.", e);
+        } finally {
+            try {
+                resultSet.close();
+            } catch (SQLException ignored) {
+                // No operations.
+            }
+        }
+
+        result.trimToSize();
+        return result;
+    }
+
+    /**
+     * Extracts all rows from the result set and return them as RowRoll.
+     *
+     * @param resultSet JDBC result set to be read.
+     * @return RowRoll Rows in result set.
+     */
+    static RowRoll readRowRollFromResultSet(ResultSet resultSet) {
+        RowRoll result = new RowRoll();
+
+        try {
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            String[] keys = new String[columnCount];
+            for (int i = 1; i <= columnCount; ++i) {
+                keys[i - 1] = metaData.getColumnLabel(i);
+            }
+            result.setKeys(keys);
+
+            while (resultSet.next()) {
+                Object[] values = new Object[columnCount];
+                for (int i = 1; i <= columnCount; ++i) {
+                    values[i - 1] = resultSet.getObject(i);
+                }
+                result.addValues(values);
             }
         } catch (SQLException e) {
             throw new DatabaseException("Can't read the list of rows from the result set.", e);
@@ -67,7 +106,7 @@ public class Row implements Map<String, Object>, Serializable {
      * @return Row The first row from the result set.
      */
     static Row readFirstFromResultSet(ResultSet resultSet) {
-        List<Row> result = new ArrayList<Row>(1);
+        List<Row> result = new ArrayList<>(1);
 
         try {
             ResultSetMetaData metaData = resultSet.getMetaData();

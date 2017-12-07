@@ -557,6 +557,9 @@ public class JacuzziTest {
         List<Row> rows = jacuzzi.findRows("SELECT id, name FROM User");
         assertEquals(1234, rows.size());
 
+        RowRoll rowRoll = jacuzzi.findRowRoll("SELECT id, name FROM User");
+        assertEquals(1234, rowRoll.size());
+
         assertEquals(1234L, jacuzzi.execute("DELETE FROM User"));
         assertEquals(0L, jacuzzi.execute("DELETE FROM User"));
 

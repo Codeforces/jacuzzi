@@ -27,12 +27,8 @@ class PreparedStatementUtil {
             LOG_SLOW_QUERIES_THRESHOLD_STRING == null ? 250L : Long.parseLong(LOG_SLOW_QUERIES_THRESHOLD_STRING)
     );
 
-    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
-        @Override
-        protected SimpleDateFormat initialValue() {
-            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        }
-    };
+    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT
+            = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 
     private static final int MAX_RETRY_COUNT = 10;
 
@@ -109,12 +105,31 @@ class PreparedStatementUtil {
     static List<Row> findRows(
             final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object... args)
             throws SQLException {
-        return runAndReturn(new Invokable<List<Row>>() {
-            @Override
-            public List<Row> invoke() throws SQLException {
-                return internalFindRows(dataSource, dataSourceUtil, query, args);
-            }
-        });
+        return runAndReturn(() -> internalFindRows(dataSource, dataSourceUtil, query, args));
+    }
+
+    static RowRoll findRowRoll(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args)
+            throws SQLException {
+        return runAndReturn(() -> internalFindRowRoll(dataSource, dataSourceUtil, query, args));
+    }
+
+    private static RowRoll internalFindRowRoll(DataSource dataSource, DataSourceUtil dataSourceUtil, String query, Object[] args)
+            throws SQLException {
+        Connection connection = dataSourceUtil.getConnection(dataSource);
+        PreparedStatement statement = null;
+
+        try {
+            statement = getPreparedStatement(query, connection);
+
+            setupPreparedStatementParameters(statement, args);
+            ResultSet resultSet = preparedStatementExecuteQuery(statement, query, args);
+            statement.clearParameters();
+
+            return Row.readRowRollFromResultSet(resultSet);
+        } finally {
+            tryCloseStatement(statement);
+            tryCloseConnection(dataSourceUtil, dataSource, connection);
+        }
     }
 
     private static List<Row> internalFindRows(
@@ -136,15 +151,10 @@ class PreparedStatementUtil {
         }
     }
 
-    public static int execute(
+    static int execute(
             final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query,
             final Object[] args, final List<Row> generatedKeys) throws SQLException {
-        return runAndReturn(new Invokable<Integer>() {
-            @Override
-            public Integer invoke() throws SQLException {
-                return internalExecute(dataSource, dataSourceUtil, query, args, generatedKeys);
-            }
-        });
+        return runAndReturn(() -> internalExecute(dataSource, dataSourceUtil, query, args, generatedKeys));
     }
 
     private static int internalExecute(
@@ -171,15 +181,10 @@ class PreparedStatementUtil {
         }
     }
 
-    public static Row findFirstRow(
+    static Row findFirstRow(
             final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object[] args)
             throws SQLException {
-        return runAndReturn(new Invokable<Row>() {
-            @Override
-            public Row invoke() throws SQLException {
-                return internalFindFirstRow(dataSource, dataSourceUtil, query, args);
-            }
-        });
+        return runAndReturn(() -> internalFindFirstRow(dataSource, dataSourceUtil, query, args));
     }
 
     private static Row internalFindFirstRow(
@@ -203,7 +208,7 @@ class PreparedStatementUtil {
 
     private static Object wrapResult(Object result) {
         if (result == null) {
-            return result;
+            return null;
         }
 
         if (result.getClass().equals(Timestamp.class)) {
@@ -217,15 +222,11 @@ class PreparedStatementUtil {
         return result;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static Object findOne(
             final DataSource dataSource, final DataSourceUtil dataSourceUtil, final String query, final Object[] args)
             throws SQLException {
-        return runAndReturn(new Invokable<Object>() {
-            @Override
-            public Object invoke() throws SQLException {
-                return internalFindOne(dataSource, dataSourceUtil, query, args);
-            }
-        });
+        return runAndReturn(() -> internalFindOne(dataSource, dataSourceUtil, query, args));
     }
 
     private static Object internalFindOne(
@@ -305,7 +306,7 @@ class PreparedStatementUtil {
         return connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
     }
 
-    public static <T> T runAndReturn(Invokable<T> invokable) throws SQLException {
+    private static <T> T runAndReturn(Invokable<T> invokable) throws SQLException {
         SQLRecoverableException exception = null;
 
         for (int i = 0; i < MAX_RETRY_COUNT; ++i) {
