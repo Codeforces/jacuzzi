@@ -2,6 +2,7 @@ package org.jacuzzi.core;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -81,7 +82,7 @@ public class Row implements Map<String, Object>, Serializable {
             while (resultSet.next()) {
                 Object[] values = new Object[columnCount];
                 for (int i = 1; i <= columnCount; ++i) {
-                    values[i - 1] = resultSet.getObject(i);
+                    values[i - 1] = PreparedStatementUtil.prepareResultSetGetObject(resultSet.getObject(i));
                 }
                 result.addValues(values);
             }
@@ -137,7 +138,7 @@ public class Row implements Map<String, Object>, Serializable {
         try {
             Row row = new Row(metaData.getColumnCount());
             for (int i = 1; i <= metaData.getColumnCount(); ++i) {
-                row.put(metaData.getColumnLabel(i), resultSet.getObject(i));
+                row.put(metaData.getColumnLabel(i), PreparedStatementUtil.prepareResultSetGetObject(resultSet.getObject(i)));
             }
             result.add(row);
         } catch (SQLException e) {

@@ -4,6 +4,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Logger;
 
 import javax.sql.DataSource;
+import java.math.BigInteger;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -249,7 +250,7 @@ class PreparedStatementUtil {
 
             Object result = null;
             if (resultSet.next()) {
-                result = resultSet.getObject(1);
+                result = prepareResultSetGetObject(resultSet.getObject(1));
             }
 
             if (resultSet.next()) {
@@ -307,12 +308,12 @@ class PreparedStatementUtil {
     }
 
     private static <T> T runAndReturn(Invokable<T> invokable) throws SQLException {
-        SQLRecoverableException exception = null;
+        SQLException exception = null;
 
         for (int i = 0; i < MAX_RETRY_COUNT; ++i) {
             try {
                 return invokable.invoke();
-            } catch (SQLRecoverableException e) {
+            } catch (SQLRecoverableException | SQLNonTransientConnectionException e) {
                 exception = e;
                 try {
                     Thread.sleep(i * i * 100L);
@@ -323,6 +324,23 @@ class PreparedStatementUtil {
         }
 
         throw exception;
+    }
+
+    static Object prepareResultSetGetObject(Object object) {
+        if (object == null) {
+            return null;
+        }
+
+        if (object instanceof BigInteger) {
+            BigInteger bigInteger = (BigInteger) object;
+            try {
+                object = bigInteger.longValueExact();
+            } catch (ArithmeticException ignored) {
+                // No operations.
+            }
+        }
+
+        return object;
     }
 
     private interface Invokable<T> {
