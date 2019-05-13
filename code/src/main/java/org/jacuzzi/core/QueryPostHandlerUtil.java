@@ -9,7 +9,7 @@ import java.util.List;
  * @author kuviman (kuviman@gmail.com)
  */
 class QueryPostHandlerUtil {
-    private static List<QueryPostHandler> handlers = new ArrayList<>();
+    private static final List<QueryPostHandler> handlers = new ArrayList<>();
 
     static {
         try {
