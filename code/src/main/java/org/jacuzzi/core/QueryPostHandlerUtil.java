@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * @author kuviman (kuviman@gmail.com)
@@ -13,7 +14,9 @@ class QueryPostHandlerUtil {
 
     static {
         try {
-            String classes = System.getProperty("jacuzzi.queryPostHandlerClasses");
+            Properties properties = new Properties();
+            properties.load(QueryPostHandler.class.getResourceAsStream("/jacuzzi.properties"));
+            String classes = properties.getProperty("queryPostHandlerClasses");
             if (classes != null) {
                 for (String clazz : classes.split(";")) {
                     clazz = StringUtils.trimToNull(clazz);
