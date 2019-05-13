@@ -6,6 +6,13 @@ import java.sql.PreparedStatement;
  * @author kuviman (kuviman@gmail.com)
  */
 public interface QueryPostHandler {
+    /**
+     * Called after a successfully executed query
+     *
+     * This method may be called concurrently, thus should be thread safe
+     *
+     * @param query Successfully executed query
+     */
     void handle(Query query);
 
     class Query {
