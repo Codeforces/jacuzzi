@@ -2,6 +2,7 @@ package org.jacuzzi.core;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -15,17 +16,20 @@ class QueryPostHandlerUtil {
     static {
         try {
             Properties properties = new Properties();
-            properties.load(QueryPostHandler.class.getResourceAsStream("/jacuzzi.properties"));
-            String classes = properties.getProperty("queryPostHandlerClasses");
-            if (classes != null) {
-                for (String clazz : classes.split(";")) {
-                    clazz = StringUtils.trimToNull(clazz);
-                    if (clazz != null) {
-                        Object instance = Class.forName(clazz).newInstance();
-                        if (instance instanceof QueryPostHandler) {
-                            handlers.add((QueryPostHandler) instance);
-                        } else {
-                            throw new RuntimeException(clazz + " does not implement " + QueryPostHandler.class.getSimpleName());
+            InputStream propertiesResource = QueryPostHandler.class.getResourceAsStream("/jacuzzi.properties");
+            if (propertiesResource != null) {
+                properties.load(propertiesResource);
+                String classes = properties.getProperty("queryPostHandlerClasses");
+                if (classes != null) {
+                    for (String clazz : classes.split(";")) {
+                        clazz = StringUtils.trimToNull(clazz);
+                        if (clazz != null) {
+                            Object instance = Class.forName(clazz).newInstance();
+                            if (instance instanceof QueryPostHandler) {
+                                handlers.add((QueryPostHandler) instance);
+                            } else {
+                                throw new RuntimeException(clazz + " does not implement " + QueryPostHandler.class.getSimpleName());
+                            }
                         }
                     }
                 }
