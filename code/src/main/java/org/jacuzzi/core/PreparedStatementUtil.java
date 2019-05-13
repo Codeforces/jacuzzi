@@ -35,51 +35,50 @@ class PreparedStatementUtil {
 
     private static ResultSet preparedStatementExecuteQuery(PreparedStatement statement, String query, Object[] args)
             throws SQLException {
-        if (LOG_SLOW_QUERIES || DEBUG_QUERIES) {
-            long before = System.currentTimeMillis();
-            try {
-                return statement.executeQuery();
-            } finally {
-                long duration = System.currentTimeMillis() - before;
-                if (duration > PRINT_QUERY_TIMES_THRESHOLD) {
-                    logger.warn(String.format(
-                            "Query \"%s\" with parameters [%s] takes %d ms.", query, formatParameters(args), duration
-                    ));
-                }
-                if (DEBUG_QUERIES) {
-                    logger.debug(String.format(
-                            "Query \"%s\" with parameters [%s] takes %d ms.", query, formatParameters(args), duration
-                    ));
-                }
+        ResultSet result;
+        long before = System.currentTimeMillis();
+        long duration;
+        try {
+            result = statement.executeQuery();
+        } finally {
+            duration = System.currentTimeMillis() - before;
+            if (LOG_SLOW_QUERIES && duration > PRINT_QUERY_TIMES_THRESHOLD) {
+                logger.warn(String.format(
+                        "Query \"%s\" with parameters [%s] takes %d ms.", query, formatParameters(args), duration
+                ));
             }
-        } else {
-            return statement.executeQuery();
+            if (DEBUG_QUERIES) {
+                logger.debug(String.format(
+                        "Query \"%s\" with parameters [%s] takes %d ms.", query, formatParameters(args), duration
+                ));
+            }
         }
+        QueryPostHandlerUtil.handle(new QueryPostHandler.Query(query, args, statement, duration));
+        return result;
     }
 
     private static int preparedQueryExecuteUpdate(PreparedStatement statement, String query, Object[] args)
             throws SQLException {
-        if (LOG_SLOW_QUERIES || DEBUG_QUERIES) {
-            long before = System.currentTimeMillis();
-            int result = 0;
-            try {
-                return result = statement.executeUpdate();
-            } finally {
-                long duration = System.currentTimeMillis() - before;
-                if (LOG_SLOW_QUERIES && duration > PRINT_QUERY_TIMES_THRESHOLD) {
-                    logger.warn(String.format(
-                            "Query \"%s\" with parameters [%s] takes %d ms, updated %d rows.", query, formatParameters(args), duration, result
-                    ));
-                }
-                if (DEBUG_QUERIES) {
-                    logger.debug(String.format(
-                            "Query \"%s\" with parameters [%s] takes %d ms, updated %d rows.", query, formatParameters(args), duration, result
-                    ));
-                }
+        int result = 0;
+        long before = System.currentTimeMillis();
+        long duration;
+        try {
+            result = statement.executeUpdate();
+        } finally {
+            duration = System.currentTimeMillis() - before;
+            if (LOG_SLOW_QUERIES && duration > PRINT_QUERY_TIMES_THRESHOLD) {
+                logger.warn(String.format(
+                        "Query \"%s\" with parameters [%s] takes %d ms, updated %d rows.", query, formatParameters(args), duration, result
+                ));
             }
-        } else {
-            return statement.executeUpdate();
+            if (DEBUG_QUERIES) {
+                logger.debug(String.format(
+                        "Query \"%s\" with parameters [%s] takes %d ms, updated %d rows.", query, formatParameters(args), duration, result
+                ));
+            }
         }
+        QueryPostHandlerUtil.handle(new QueryPostHandler.Query(query, args, statement, duration));
+        return result;
     }
 
     private static String formatParameters(Object[] args) {
