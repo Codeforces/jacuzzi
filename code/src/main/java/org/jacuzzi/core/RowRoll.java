@@ -1,7 +1,5 @@
 package org.jacuzzi.core;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +14,7 @@ public class RowRoll {
     private int[] keyHashCodes;
     private ArrayList<Object[]> valuesList;
 
+    @SuppressWarnings("WeakerAccess")
     public void setKeys(String[] keys) {
         this.keys = keys;
         initializeKeyHashCodesAndType();
@@ -62,6 +61,7 @@ public class RowRoll {
         type = calculateType();
     }
 
+    @SuppressWarnings("WeakerAccess")
     public void addValues(Object[] values) {
         if (values.length != keys.length) {
             throw new IllegalArgumentException("Illegal values size: values.length != keys.length [values.length="
@@ -84,6 +84,7 @@ public class RowRoll {
         return new Row(arrayMap);
     }
 
+    @SuppressWarnings({"WeakerAccess", "BooleanMethodIsAlwaysInverted"})
     public boolean isEmpty() {
         return valuesList == null || valuesList.isEmpty();
     }
@@ -112,12 +113,14 @@ public class RowRoll {
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
     public void trimToSize() {
         if (valuesList != null) {
             valuesList.trimToSize();
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
     public int getColumnCount() {
         return keys == null ? 0 : keys.length;
     }

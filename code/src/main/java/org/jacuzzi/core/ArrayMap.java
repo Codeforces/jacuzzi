@@ -20,7 +20,7 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
     private transient volatile Set<K> keySet;
     private transient volatile Collection<V> valuesCollection;
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "WeakerAccess"})
     public ArrayMap(int capacity) {
         keys = (K[]) new Object[capacity];
         hashCodes = new int[capacity];
@@ -41,6 +41,7 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
         putAll(map);
     }
 
+    @SuppressWarnings("WeakerAccess")
     ArrayMap(K[] keys, V[] values) {
         this.keys = keys;
         this.hashCodes = new int[keys.length];
@@ -353,6 +354,7 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
         }
     }
 
+    @Deprecated
     public static int toBinaryArray(byte[] bytes, int offset, @Nonnull List<Row> rows) {
         offset = ByteArrayUtil.writeString(bytes, offset, "ROWS");
         offset = ByteArrayUtil.writeInt(bytes, offset, rows.size());
@@ -371,6 +373,7 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
         return offset;
     }
 
+    @Deprecated
     public static int toBinaryArray(byte[] bytes, int offset, @Nonnull RowRoll rowRoll) {
         offset = ByteArrayUtil.writeString(bytes, offset, "ROWS");
         offset = ByteArrayUtil.writeInt(bytes, offset, rowRoll.size());
@@ -379,6 +382,47 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
             offset = convertRowRollToBinaryArray(bytes, offset, rowRoll);
         }
         return offset;
+    }
+
+    public static void writeRowRoll(OutputStream outputStream, @Nonnull RowRoll rowRoll) throws IOException {
+        OutputStreamUtil.writeString(outputStream, "ROWS");
+        OutputStreamUtil.writeInt(outputStream, rowRoll.size());
+        if (!rowRoll.isEmpty()) {
+            OutputStreamUtil.writeByte(outputStream, (byte) 'A');
+            writeRowRollBody(outputStream, rowRoll);
+        }
+    }
+
+    private static void writeRowRollBody(OutputStream outputStream, RowRoll rowRoll) throws IOException {
+        int n = rowRoll.getColumnCount();
+
+        int[] keyTypes = new int[n];
+        calculateTypes(keyTypes, rowRoll.getKeys());
+        writeObjectArray(outputStream, keyTypes, rowRoll.getKeys());
+
+        int[] valueTypes = new int[n];
+        Arrays.fill(valueTypes, -1);
+        for (Object[] values : rowRoll.getValueList()) {
+            calculateTypes(valueTypes, values);
+            boolean containsMinusOne = false;
+            for (int valueType : valueTypes) {
+                if (valueType == -1) {
+                    containsMinusOne = true;
+                    break;
+                }
+            }
+            if (!containsMinusOne) {
+                break;
+            }
+        }
+
+        for (int valueType : valueTypes) {
+            OutputStreamUtil.writeByte(outputStream, (byte) valueType);
+        }
+
+        for (Object[] values : rowRoll.getValueList()) {
+            writeObjectArray(outputStream, valueTypes, values);
+        }
     }
 
     private static int convertHashMapRowsToBinaryArray(byte[] bytes, int offset, List<Row> rows) {
@@ -451,6 +495,7 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
         return offset;
     }
 
+    @Deprecated
     public static RowRoll toRowRoll(byte[] bytes) {
         int[] offset = new int[]{0};
         String header = ByteArrayUtil.readString(bytes, offset);
@@ -471,6 +516,47 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
         return convertBinaryArrayToRowRoll(bytes, offset, size);
     }
 
+    public static RowRoll readRowRoll(InputStream inputStream) throws IOException {
+        String header = InputStreamUtil.readString(inputStream);
+        if (!"ROWS".equals(header)) {
+            throw new RuntimeException("Expected 'ROWS'.");
+        }
+
+        int size = InputStreamUtil.readInt(inputStream);
+        if (size == 0) {
+            return new RowRoll();
+        }
+
+        byte type = InputStreamUtil.readByte(inputStream);
+        if (type != 'A') {
+            throw new IllegalStateException("Expected 'A', but '" + (char) type + "' found.");
+        }
+
+        return readRowRollBody(inputStream, size);
+    }
+
+    private static RowRoll readRowRollBody(InputStream inputStream, int size) throws IOException {
+        RowRoll rowRoll = new RowRoll();
+
+        Object[] objectKeys = readObjectArray(inputStream, null);
+        String[] keys = new String[objectKeys.length];
+        for (int i = 0; i < objectKeys.length; i++) {
+            keys[i] = (String) objectKeys[i];
+        }
+        rowRoll.setKeys(keys);
+
+        int[] valueTypes = new int[size];
+        for (int i = 0; i < keys.length; i++) {
+            valueTypes[i] = InputStreamUtil.readByte(inputStream);
+        }
+
+        for (int i = 0; i < size; i++) {
+            rowRoll.addValues(readObjectArray(inputStream, valueTypes));
+        }
+
+        return rowRoll;
+    }
+    
     private static RowRoll convertBinaryArrayToRowRoll(byte[] bytes, int[] offset, int size) {
         RowRoll rowRoll = new RowRoll();
 
@@ -493,6 +579,7 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
         return rowRoll;
     }
 
+    @Deprecated
     public static List<Row> toRows(byte[] bytes) {
         int[] offset = new int[]{0};
         String header = ByteArrayUtil.readString(bytes, offset);
@@ -584,6 +671,42 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
 
         return result;
     }
+    
+    private static Object[] readObjectArray(InputStream inputStream, int[] types) throws IOException {
+        int n = InputStreamUtil.readInt(inputStream);
+        Object[] result = new Object[n];
+
+        for (int i = 0; i < n; i++) {
+            byte nil = InputStreamUtil.readByte(inputStream);
+            if (nil == 0) {
+                continue;
+            }
+            if (nil != 1) {
+                throw new RuntimeException("Expected 1.");
+            }
+
+            int type = types == null ? 20 : types[i];
+            if (type == 0) {
+                result[i] = InputStreamUtil.readByte(inputStream);
+            } else if (type == 2) {
+                result[i] = InputStreamUtil.readInt(inputStream);
+            } else if (type == 4) {
+                result[i] = InputStreamUtil.readLong(inputStream);
+            } else if (type == 6) {
+                result[i] = InputStreamUtil.readDouble(inputStream);
+            } else if (type == 8) {
+                result[i] = InputStreamUtil.readBoolean(inputStream);
+            } else if (type == 20) {
+                result[i] = InputStreamUtil.readString(inputStream);
+            } else if (type == 22) {
+                result[i] = InputStreamUtil.readDate(inputStream);
+            } else {
+                throw new RuntimeException("Unexpected type=" + type + ".");
+            }
+        }
+
+        return result;
+    }
 
     private static int writeObjectArray(byte[] bytes, int offset, int[] types, Object[] array) {
         offset = ByteArrayUtil.writeInt(bytes, offset, array.length);
@@ -595,37 +718,9 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
                 offset = ByteArrayUtil.writeByte(bytes, offset, (byte) 1);
 
                 int type = types[i];
-                // 0 - byte
-                // 1 - Byte
-                // 2 - int
-                // 3 - Integer
-                // 4 - long
-                // 5 - Long
-                // 6 - double
-                // 7 - Double
-                // 8 - boolean
-                // 9 - Boolean
-                // 20 - String
-                // 22 - Date
 
                 if (type == -1) {
-                    if (item instanceof Byte) {
-                        type = 0;
-                    } else if (item instanceof Integer) {
-                        type = 2;
-                    } else if (item instanceof Long) {
-                        type = 4;
-                    } else if (item instanceof Double) {
-                        type = 6;
-                    } else if (item instanceof Boolean) {
-                        type = 8;
-                    } else if (item instanceof String) {
-                        type = 20;
-                    } else if (item instanceof Date) {
-                        type = 22;
-                    } else {
-                        throw new RuntimeException("ArrayMap type '" + item.getClass() + "' is not for custom serialization.");
-                    }
+                    type = getType(item);
                     types[i] = type;
                 }
 
@@ -649,6 +744,188 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
             }
         }
         return offset;
+    }
+
+    private static int getType(Object item) {
+        // 0 - byte
+        // 1 - Byte
+        // 2 - int
+        // 3 - Integer
+        // 4 - long
+        // 5 - Long
+        // 6 - double
+        // 7 - Double
+        // 8 - boolean
+        // 9 - Boolean
+        // 20 - String
+        // 22 - Date
+
+        int type;
+        if (item instanceof Byte) {
+            type = 0;
+        } else if (item instanceof Integer) {
+            type = 2;
+        } else if (item instanceof Long) {
+            type = 4;
+        } else if (item instanceof Double) {
+            type = 6;
+        } else if (item instanceof Boolean) {
+            type = 8;
+        } else if (item instanceof String) {
+            type = 20;
+        } else if (item instanceof Date) {
+            type = 22;
+        } else {
+            throw new RuntimeException("ArrayMap type '" + item.getClass() + "' is not for custom serialization.");
+        }
+        return type;
+    }
+
+    private static void calculateTypes(int[] types, Object[] array) {
+        for (int i = 0; i < array.length; i++) {
+            Object item = array[i];
+            if (item != null) {
+                types[i] = getType(item);
+            }
+        }
+    }
+
+    private static void writeObjectArray(OutputStream outputStream, int[] types, Object[] array) throws IOException {
+        OutputStreamUtil.writeInt(outputStream, array.length);
+        for (int i = 0; i < array.length; i++) {
+            Object item = array[i];
+            int type = types[i];
+            if (item == null) {
+                OutputStreamUtil.writeByte(outputStream, (byte) 0);
+            } else {
+                OutputStreamUtil.writeByte(outputStream, (byte) 1);
+
+                if (type == 0) {
+                    OutputStreamUtil.writeByte(outputStream, (byte) item);
+                } else if (type == 2) {
+                    OutputStreamUtil.writeInt(outputStream, (int) item);
+                } else if (type == 4) {
+                    OutputStreamUtil.writeLong(outputStream, (long) item);
+                } else if (type == 6) {
+                    OutputStreamUtil.writeDouble(outputStream, (double) item);
+                } else if (type == 8) {
+                    OutputStreamUtil.writeBoolean(outputStream, (boolean) item);
+                } else if (type == 20) {
+                    OutputStreamUtil.writeString(outputStream, (String) item);
+                } else if (type == 22) {
+                    OutputStreamUtil.writeDate(outputStream, (Date) item);
+                } else {
+                    throw new RuntimeException("Unexpected type=" + type + ".");
+                }
+            }
+        }
+    }
+
+    private static final class InputStreamUtil {
+        private static byte readByte(InputStream inputStream) throws IOException {
+            int result = inputStream.read();
+            if (result == -1) {
+                throw new IOException("Unexpected end of the inputStream.");
+            }
+            return (byte) result;
+        }
+
+        private static int readInt(InputStream inputStream) throws IOException {
+            int n = 0;
+            for (int i = 0; i < 4; i++) {
+                int value = readByte(inputStream);
+                if (value < 0) {
+                    value += 256;
+                }
+                n ^= (value << (8 * i));
+            }
+            return n;
+        }
+
+        private static long readLong(InputStream inputStream) throws IOException {
+            long n = 0;
+            for (int i = 0; i < 8; i++) {
+                long value = readByte(inputStream);
+                if (value < 0) {
+                    value += 256;
+                }
+                n ^= (value << (8 * i));
+            }
+            return n;
+        }
+
+        private static double readDouble(InputStream inputStream) throws IOException {
+            return Double.longBitsToDouble(readLong(inputStream));
+        }
+
+        private static boolean readBoolean(InputStream inputStream) throws IOException {
+            return readByte(inputStream) != 0;
+        }
+
+        private static String readString(InputStream inputStream) throws IOException {
+            int length = readInt(inputStream);
+            if (length == Integer.MIN_VALUE) {
+                return null;
+            } else {
+                byte[] buffer = new byte[length];
+                int offset = 0;
+                while (offset < length) {
+                    int readBytes = inputStream.read(buffer, offset, length - offset);
+                    if (readBytes == -1) {
+                        throw new IOException("Unexpected end of the inputStream.");
+                    }
+                    offset += readBytes;
+                }
+                return new String(buffer, 0, length, StandardCharsets.UTF_8);
+            }
+        }
+
+        private static Date readDate(InputStream inputStream) throws IOException {
+            long n = readLong(inputStream);
+            if (n == Long.MIN_VALUE) {
+                return null;
+            } else {
+                return new Date(n);
+            }
+        }
+    }
+    
+    private static final class OutputStreamUtil {
+        private static void writeByte(OutputStream outputStream, byte n) throws IOException {
+            outputStream.write(n);
+        }
+
+        private static void writeInt(OutputStream outputStream, int n) throws IOException {
+            for (int i = 0; i < 4; i++) {
+                writeByte(outputStream, (byte) (n & 255));
+                n >>>= 8;
+            }
+        }
+
+        private static void writeLong(OutputStream outputStream, long n) throws IOException {
+            for (int i = 0; i < 8; i++) {
+                writeByte(outputStream, (byte) (n & 255));
+                n >>>= 8;
+            }
+        }
+
+        private static void writeDouble(OutputStream outputStream, double n) throws IOException {
+            writeLong(outputStream, Double.doubleToLongBits(n));
+        }
+
+        private static void writeBoolean(OutputStream outputStream, boolean n) throws IOException {
+            writeByte(outputStream, (byte) (n ? 1 : 0));
+        }
+
+        private static void writeString(OutputStream outputStream, String s) throws IOException {
+            byte[] buffer = s.getBytes(StandardCharsets.UTF_8);
+            writeInt(outputStream, buffer.length);
+            outputStream.write(buffer);
+        }
+
+        private static void writeDate(OutputStream outputStream, Date date) throws IOException {
+            writeLong(outputStream, date.getTime());
+        }
     }
 
     private static final class ByteArrayUtil {
