@@ -1,3 +1,7 @@
+.classpath
+.project
+.settings/
+
 /code/jacuzzi.iml
 /code/jacuzzi.ipr
 /code/jacuzzi.iws
