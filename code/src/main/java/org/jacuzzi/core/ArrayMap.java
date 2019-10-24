@@ -545,7 +545,7 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
         }
         rowRoll.setKeys(keys);
 
-        int[] valueTypes = new int[size];
+        int[] valueTypes = new int[keys.length];
         for (int i = 0; i < keys.length; i++) {
             valueTypes[i] = InputStreamUtil.readByte(inputStream);
         }
@@ -567,7 +567,7 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
         }
         rowRoll.setKeys(keys);
 
-        int[] valueTypes = new int[size];
+        int[] valueTypes = new int[keys.length];
         for (int i = 0; i < keys.length; i++) {
             valueTypes[i] = ByteArrayUtil.readByte(bytes, offset);
         }
@@ -611,7 +611,7 @@ public class ArrayMap<K, V> implements Map<K, V>, Serializable {
             keys[i] = (String) objectKeys[i];
         }
 
-        int[] valueTypes = new int[size];
+        int[] valueTypes = new int[keys.length];
         for (int i = 0; i < keys.length; i++) {
             valueTypes[i] = ByteArrayUtil.readByte(bytes, offset);
         }
