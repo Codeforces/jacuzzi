@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * This class is used to manipulate with dataSource. Jacuzzi don't call
  * dataSource.getConnection() explicitly. It uses DataSourceUtil.getConnection(dataSource).
- * <p/>
+ *
  * If you are using any pooling dataSource, DataSourceUtil.getConnection(dataSource) can return
  * new connection each call. Use DataSourceUtil.attachConnection() / DataSourceUtil.detachConnection()
  * if you want to attach one connection to the thread. It can be usefull if you want to be sure

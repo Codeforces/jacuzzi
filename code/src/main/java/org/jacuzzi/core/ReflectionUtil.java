@@ -79,7 +79,7 @@ class ReflectionUtil {
     public static FastMethod findGetterByName(Class<?> clazz, String field, String getterName) {
         FastMethod getter = null;
 
-        while (getter == null && clazz != null) {
+        while (getter == null && clazz != Object.class) {
             if (clazz.getAnnotation(Transient.class) != null) {
                 break;
             }
@@ -111,19 +111,17 @@ class ReflectionUtil {
             FastMethod clazzMethod = fastClazz.getMethod(clazz.getDeclaredMethod(method));
 
             if (clazzMethod != null) {
-                return new ReflectionFindResult<FastMethod>(clazzMethod, false);
+                return new ReflectionFindResult<>(clazzMethod, false);
             }
 
-            return new ReflectionFindResult<FastMethod>();
-        } catch (NoSuchMethodError ignored) {
-            return new ReflectionFindResult<FastMethod>();
-        } catch (NoSuchMethodException ignored) {
-            return new ReflectionFindResult<FastMethod>();
+            return new ReflectionFindResult<>();
+        } catch (NoSuchMethodError | NoSuchMethodException ignored) {
+            return new ReflectionFindResult<>();
         }
     }
 
     public static String[] findFields(Class<?> clazz) {
-        Set<String> result = new TreeSet<String>();
+        Set<String> result = new TreeSet<>();
 
         while (clazz != null) {
             if (clazz.getAnnotation(Transient.class) != null) {
@@ -163,7 +161,7 @@ class ReflectionUtil {
     }
 
     public static Map<String, Field> findFieldsMap(Class<?> clazz) {
-        Map<String, Field> result = new HashMap<String, Field>();
+        Map<String, Field> result = new HashMap<>();
 
         while (clazz != null) {
             if (clazz.getAnnotation(Transient.class) != null) {
@@ -187,11 +185,11 @@ class ReflectionUtil {
 
         for (Method clazzMethod : clazz.getDeclaredMethods()) {
             if (clazzMethod.getName().equals(method)) {
-                return new ReflectionFindResult<FastMethod>(fastClazz.getMethod(clazzMethod), false);
+                return new ReflectionFindResult<>(fastClazz.getMethod(clazzMethod), false);
             }
         }
 
-        return new ReflectionFindResult<FastMethod>();
+        return new ReflectionFindResult<>();
     }
 
     private static FastClass getFastClass(Class<?> clazz) {
@@ -201,9 +199,9 @@ class ReflectionUtil {
     private static ReflectionFindResult<Field> findMappedClassField(Class<?> clazz, String field) {
         try {
             Field clazzField = clazz.getDeclaredField(field);
-            return new ReflectionFindResult<Field>(clazzField, clazzField.getAnnotation(Transient.class) != null);
+            return new ReflectionFindResult<>(clazzField, clazzField.getAnnotation(Transient.class) != null);
         } catch (NoSuchFieldException ignored) {
-            return new ReflectionFindResult<Field>();
+            return new ReflectionFindResult<>();
         }
     }
 

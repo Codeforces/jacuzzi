@@ -1,0 +1,6 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Tue Oct 26 17:04:45 MSK 2021
+jacuzzi-0.1.0-SNAPSHOT.jar>=
+jacuzzi-0.1.0-SNAPSHOT-javadoc.jar>=
+jacuzzi-0.1.0-SNAPSHOT.pom>=
+jacuzzi-0.1.0-SNAPSHOT-sources.jar>=

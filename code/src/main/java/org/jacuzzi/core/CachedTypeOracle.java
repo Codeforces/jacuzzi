@@ -11,7 +11,7 @@ class CachedTypeOracle<T> extends TypeOracle<T> {
     private static final ThreadLocal<Map<Class<?>, TypeOracle<?>>> threadLocalCache = new ThreadLocal<Map<Class<?>, TypeOracle<?>>>() {
         @Override
         protected Map<Class<?>, TypeOracle<?>> initialValue() {
-            return new HashMap<Class<?>, TypeOracle<?>>();
+            return new HashMap<>();
         }
     };
 
@@ -22,7 +22,7 @@ class CachedTypeOracle<T> extends TypeOracle<T> {
     }
 
     CachedTypeOracle(Class<T> typeClass) {
-        typeOracle = new TypeOracleImpl<T>(typeClass);
+        typeOracle = new TypeOracleImpl<>(typeClass);
     }
 
     static Map<Class<?>, TypeOracle<?>> getThreadLocalCache() {

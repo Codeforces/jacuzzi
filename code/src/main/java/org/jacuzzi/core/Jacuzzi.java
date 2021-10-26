@@ -1,15 +1,25 @@
 package org.jacuzzi.core;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
 import javax.sql.DataSource;
 import java.lang.reflect.Constructor;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 
 /**
  * @author Mike Mirzayanov
  */
 public class Jacuzzi {
+    private static final Logger logger = Logger.getLogger(Jacuzzi.class);
+
+    public static final ZoneOffset ZONE_OFFSET;
+
     /**
      * {@code DataSource} instance,
      * all database routine will use connections
@@ -63,7 +73,7 @@ public class Jacuzzi {
     /**
      * Call it to begin transaction around
      * current connection in current thread.
-     * <p/>
+     *
      * You should call commit() or rollback() at
      * the end of transaction.
      *
@@ -85,7 +95,7 @@ public class Jacuzzi {
     /**
      * Call it to begin transaction around
      * current connection in current thread.
-     * <p/>
+     *
      * You should call commit() or rollback() at
      * the end of transaction.
      */
@@ -164,7 +174,7 @@ public class Jacuzzi {
             List<Row> generated = new ArrayList<>(1);
             int count = PreparedStatementUtil.execute(dataSource, dataSourceUtil, query, args, generated);
             if (generated.isEmpty()) {
-                List<Row> generatedKeys = new ArrayList<Row>(1);
+                List<Row> generatedKeys = new ArrayList<>(1);
                 generatedKeys.add(new Row(1));
                 return new InsertResult(count, generatedKeys);
             } else {
@@ -191,7 +201,7 @@ public class Jacuzzi {
      */
     public InsertResult multipleInsert(String query, Object... args) {
         try {
-            List<Row> generated = new ArrayList<Row>();
+            List<Row> generated = new ArrayList<>();
             int count = PreparedStatementUtil.execute(dataSource, dataSourceUtil, query, args, generated);
 
             return new InsertResult(count, generated);
@@ -313,14 +323,29 @@ public class Jacuzzi {
      * @return The only value in the only row as {@code Date}.
      */
     public Date findDate(String query, Object... args) {
-        return (Date) findOne(query, args);
+        Object result = findOne(query, args);
+        if (result == null) {
+            return null;
+        }
+        if (result instanceof Date) {
+            return (Date) result;
+        }
+        if (result instanceof OffsetDateTime) {
+            long epochMilli = ((OffsetDateTime) result).toInstant().toEpochMilli();
+            return new Date(epochMilli);
+        }
+        if (result instanceof LocalDateTime) {
+            return Date.from(((LocalDateTime) result).toInstant(ZONE_OFFSET));
+        }
+        throw new DatabaseException("Query `" + query + "` expected to return Date, OffsetDateTime or LocalDateTime.");
     }
 
     /**
      * Returns DAO instance by given DAO class.
      * Gets it from the cache or creates if needed.
      *
-     * @param daoClazz of type Class<T> Class<? extends GenericDao<?,?>> instance.
+     * @param <T> Entity type.
+     * @param daoClazz Instance class.
      * @return T DAO instance.
      */
     @SuppressWarnings({"unchecked"})
@@ -330,7 +355,7 @@ public class Jacuzzi {
                 return (T) daoCache.get(daoClazz);
             } else {
                 try {
-                    Constructor constructor = daoClazz.getDeclaredConstructor(DataSource.class);
+                    Constructor<?> constructor = daoClazz.getDeclaredConstructor(DataSource.class);
                     constructor.setAccessible(true);
                     GenericDao<?, ?> dao = (GenericDao<?, ?>) constructor.newInstance(dataSource);
                     daoCache.put(daoClazz, dao);
@@ -346,6 +371,7 @@ public class Jacuzzi {
      * This method you can use to convert the data from JDBC into specific
      * java instances. For example, JDBC returns string but we need enum instance.
      *
+     * @param <T> Type convert to.
      * @param instance Instance to be converted.
      * @param clazz    Target class.
      * @return T Converted instance.
@@ -425,5 +451,15 @@ public class Jacuzzi {
         public List<Row> getGeneratedKeys() {
             return Collections.unmodifiableList(generatedKeys);
         }
+    }
+
+    static {
+        String zoneOffsetId = System.getProperty("jacuzzi.zoneOffsetId");
+        if (StringUtils.isBlank(zoneOffsetId)) {
+            logger.warn("No JVM option -Djacuzzi.zoneOffsetId, use +3.");
+            zoneOffsetId = "+3";
+        }
+        logger.info("Property jacuzzi.zoneOffsetId='" + zoneOffsetId + "'.");
+        ZONE_OFFSET = ZoneOffset.of(zoneOffsetId);
     }
 }
