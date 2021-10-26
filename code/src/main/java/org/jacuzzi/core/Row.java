@@ -2,10 +2,11 @@ package org.jacuzzi.core;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 /**
@@ -175,6 +176,12 @@ public class Row implements Map<String, Object>, Serializable {
     public Object put(String key, Object value) {
         if (value instanceof Date) {
             value = new Date(((Date) value).getTime());
+        }
+        if (value instanceof LocalDateTime) {
+            value = Date.from(((LocalDateTime) value).toInstant(Jacuzzi.ZONE_OFFSET));
+        }
+        if (value instanceof OffsetDateTime) {
+            value = new Date(((OffsetDateTime) value).toInstant().toEpochMilli());
         }
 
         return delegateMap.put(key, value);

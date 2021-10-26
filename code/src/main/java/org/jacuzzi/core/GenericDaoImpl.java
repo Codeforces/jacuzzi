@@ -40,10 +40,10 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
     /**
      * Call it to begin transaction around
      * current connection in current thread.
-     * <p/>
+     *
      * You should call commit() or rollback() at
      * the end of transaction.
-     * <p/>
+     *
      * Usually you should call commit or rollback
      * in the current DAO method.
      */

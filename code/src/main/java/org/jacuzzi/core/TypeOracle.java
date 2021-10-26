@@ -2,6 +2,8 @@ package org.jacuzzi.core;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -49,7 +51,7 @@ public abstract class TypeOracle<T> {
         if (cache.containsKey(typeClass)) {
             return (TypeOracle<T>) cache.get(typeClass);
         } else {
-            TypeOracle<T> typeOracle = new CachedTypeOracle<T>(typeClass);
+            TypeOracle<T> typeOracle = new CachedTypeOracle<>(typeClass);
             cache.put(typeClass, typeOracle);
             return typeOracle;
         }
@@ -77,6 +79,14 @@ public abstract class TypeOracle<T> {
         if (parameter.getClass().equals(java.sql.Date.class) && expectedClazz.equals(java.util.Date.class)) {
             java.sql.Date date = (Date) parameter;
             return (T) new java.util.Date(date.getTime());
+        }
+
+        if (parameter.getClass().equals(OffsetDateTime.class) && expectedClazz.equals(java.util.Date.class)) {
+            return (T) new java.util.Date(((OffsetDateTime) parameter).toInstant().toEpochMilli());
+        }
+
+        if (parameter.getClass().equals(LocalDateTime.class) && expectedClazz.equals(java.util.Date.class)) {
+            return (T) java.util.Date.from(((LocalDateTime) parameter).toInstant(Jacuzzi.ZONE_OFFSET));
         }
 
         return (T) parameter;

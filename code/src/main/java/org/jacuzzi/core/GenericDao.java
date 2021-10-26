@@ -5,15 +5,15 @@ import java.util.List;
 
 /**
  * Provides some usefull methods for entity.
- * <p/>
+ *
  * Example usage:
- * <code>
- * public class UserDao extends GenericDaoImpl<User,String> {
- * public UserDao(DataSource source) {
- * super(source);
+ * {@code
+ *  public class UserDao extends GenericDaoImpl<User,String> {
+ *      public UserDao(DataSource source) {
+ *          super(source);
+ *      }
+ *  }
  * }
- * }
- * </code>
  *
  * @author Mike Mirzayanov
  */
@@ -37,10 +37,9 @@ public interface GenericDao<T, K> {
      * Returns entity list using query to find them.
      * You can use reduced form of the query.
      * Examples:
-     * <code>
-     * users = userDao.findBy("id > 4");
-     * users = userDao.findBy("SELECT * FROM Users WHERE age >= 21");
-     * </code>
+     *
+     * {@code users = userDao.findBy("id > 4")};
+     * {@code users = userDao.findBy("SELECT * FROM Users WHERE age >= 21")};
      *
      * @param query Query (possibly in reduced form).
      * @param args  Arguments to replace "?" jokers in {@code query}.
