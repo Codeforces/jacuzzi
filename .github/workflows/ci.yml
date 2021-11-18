@@ -27,14 +27,20 @@ jobs:
         run: |
           cd code
           mvn --batch-mode install
-      - name: Test additional projects
+      - name: Test Demo
         run: |
-          PROJECTS="demo"
-          for path in $PROJECTS; do
-            pushd $path
-            mvn --batch-mode test
-            popd
-          done
+          cd demo
+          mvn --batch-mode test
+    services:
+      mariadb:
+        image: mariadb
+        ports:
+          - 3307:3306
+        env:
+          MARIADB_DATABASE: jacuzzi
+          MARIADB_USER: jacuzzi
+          MARIADB_PASSWORD: jacuzzi
+          MARIADB_RANDOM_ROOT_PASSWORD: true
   publish:
     if: github.ref == 'refs/heads/master' && github.repository_owner == 'Codeforces'
     needs: test
