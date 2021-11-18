@@ -23,10 +23,10 @@ jobs:
         run: |
           cd code
           mvn --batch-mode validate
-      - name: Package
+      - name: Install
         run: |
           cd code
-          mvn --batch-mode package
+          mvn --batch-mode install
       - name: Test additional projects
         run: |
           PROJECTS="demo"
