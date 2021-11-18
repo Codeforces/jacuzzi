@@ -16,7 +16,7 @@ public class UserDao extends GenericDaoImpl<User, Long> {
             "id BIGINT NOT NULL AUTO_INCREMENT, " +
             "login VARCHAR( 255 ) NOT NULL, " +
             "PRIMARY KEY  (id)" +
-            ") TYPE = INNODB CHARACTER SET = utf8";
+            ") ENGINE = InnoDB CHARACTER SET = utf8";
 
     private static final String DELETE_USER_TABLE_SQL = "DROP TABLE User";
 
