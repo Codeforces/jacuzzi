@@ -23,9 +23,13 @@ jobs:
         run: |
           cd code
           mvn --batch-mode validate
-      - name: Test
+      - name: Package
         run: |
-          PROJECTS="code demo"
+          cd code
+          mvn --batch-mode package
+      - name: Test additional projects
+        run: |
+          PROJECTS="demo"
           for path in $PROJECTS; do
             pushd $path
             mvn --batch-mode test
