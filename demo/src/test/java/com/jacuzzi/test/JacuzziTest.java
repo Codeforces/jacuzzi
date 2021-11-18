@@ -11,12 +11,12 @@ public class JacuzziTest extends TestCase {
     private UserDao userDao;
     private static final int ITERATION_COUNT = 20;
 
-    protected void setUp() throws Exception {
+    protected void setUp() {
         userDao = new UserDao();
         userDao.createStorage();
     }
 
-    protected void tearDown() throws Exception {
+    protected void tearDown() {
         userDao.deleteStorage();
     }
 
@@ -27,7 +27,7 @@ public class JacuzziTest extends TestCase {
     public void testInsertAndFind() {
         User user = new User();
         user.setLogin("jacuzzi");
-        assertTrue(userDao.insert(user));
+        userDao.insert(user);
         assertEquals(1, userDao.findBy("login=?", "jacuzzi").size());
     }
 
@@ -35,13 +35,13 @@ public class JacuzziTest extends TestCase {
         for (int i = 0; i < ITERATION_COUNT; i++) {
             User user = new User();
             user.setLogin("jacuzzi" + i);
-            assertTrue(userDao.insert(user));
+            userDao.insert(user);
             assertEquals(1, userDao.findBy("login=?", "jacuzzi" + i).size());
         }
         for (int i = 0; i < ITERATION_COUNT; i++) {
             User user = new User();
             user.setLogin("jacuzzi");
-            assertTrue(userDao.insert(user));
+            userDao.insert(user);
             assertEquals(i + 1, userDao.findBy("login=?", "jacuzzi").size());
         }
     }
@@ -52,7 +52,7 @@ public class JacuzziTest extends TestCase {
         for (int i = 0; i < ITERATION_COUNT; i++) {
             User user = new User();
             user.setLogin("jacuzzi");
-            assertTrue(userDao.insert(user));
+            userDao.insert(user);
         }
 
         userDao.returnJacuzzi().commit();
@@ -63,7 +63,7 @@ public class JacuzziTest extends TestCase {
         for (int i = 0; i < ITERATION_COUNT; i++) {
             User user = new User();
             user.setLogin("jacuzzi");
-            assertTrue(userDao.insert(user));
+            userDao.insert(user);
         }
 
         userDao.returnJacuzzi().rollback();
