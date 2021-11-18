@@ -1,9 +1,8 @@
 .classpath
 .project
 .settings/
-
-/code/jacuzzi.iml
-/code/jacuzzi.ipr
-/code/jacuzzi.iws
-/code/target
-/code/.idea
+*.iml
+*.ipr
+*.iws
+.idea/
+target/

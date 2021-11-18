@@ -26,6 +26,13 @@
             <properties/>
         </developer>
     </developers>
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/Codeforces/jacuzzi</url>
+        </repository>
+    </distributionManagement>
     <issueManagement>
         <system>GitHub Issues</system>
         <url>https://github.com/Codeforces/jacuzzi/issues</url>
