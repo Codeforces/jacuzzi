@@ -4,6 +4,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  JDK_JAVA_OPTIONS: "--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   test:
     # Docker actions only work on linux
@@ -12,8 +16,6 @@ jobs:
     #     os: [ubuntu-latest, windows-latest, macos-latest]
     #     java-version: [8, 11, 17]
     runs-on: ubuntu-latest
-    env:
-      JDK_JAVA_OPTIONS: "--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED"
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v2
@@ -63,5 +65,3 @@ jobs:
         run: |
           cd code
           mvn --batch-mode deploy -DskipTests
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
