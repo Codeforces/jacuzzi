@@ -32,8 +32,8 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         this.clazz = clazz;
 
         fastClazz = FastClass.create(clazz);
-        List<Field> internalFields = new ArrayList<Field>();
-        Map<String, Field> internalFieldByColumn = new HashMap<String, Field>();
+        List<Field> internalFields = new ArrayList<>();
+        Map<String, Field> internalFieldByColumn = new HashMap<>();
 
         if (clazz.getAnnotation(MappedTo.class) == null) {
             tableName = clazz.getSimpleName();
@@ -208,7 +208,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
 
     @Override
     List<Object> getValueListForInsert(boolean includeId, T instance) {
-        List<Object> result = new ArrayList<Object>(fields.size());
+        List<Object> result = new ArrayList<>(fields.size());
 
         try {
             for (Field field : fields) {
@@ -258,7 +258,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
             throw new MappingException("Nothing to set for class " + clazz + '.');
         }
 
-        List<Object> result = new ArrayList<Object>(fields.size() + 1);
+        List<Object> result = new ArrayList<>(fields.size() + 1);
 
         for (Field field : fields) {
             if (field.isIgnoreUpdate()) {
@@ -332,7 +332,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
         return result.toString();
     }
 
-    private static final String toLowerCase(String s) {
+    private static String toLowerCase(String s) {
         if (s == null) {
             return null;
         }
@@ -354,14 +354,15 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
     }
 
     @SuppressWarnings({"OverlyComplexMethod", "OverlyLongMethod"})
-    @Override
-    public T convertFromRow(Row row) {
+    public T convertFromRow(Row row, boolean allowPartialRow) {
         Set<String> columns = row.keySet();
         T instance = newInstance();
 
-        Map<String, String> columnNameByLowercaseColumnName = new HashMap<String, String>();
-        for (String column : fieldByColumn.keySet()) {
-            columnNameByLowercaseColumnName.put(toLowerCase(column), column);
+        Map<String, String> columnNameByLowercaseColumnName = new HashMap<>();
+        for (Map.Entry<String, Field> e : fieldByColumn.entrySet()) {
+            if (!e.getValue().isIgnoreSelect()) {
+                columnNameByLowercaseColumnName.put(toLowerCase(e.getKey()), e.getKey());
+            }
         }
 
         for (String column : columns) {
@@ -373,15 +374,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
                     Class<?> expectedParameterType = field.getSetter().getParameterTypes()[0];
                     Object castedParameter = convertTo(parameter, expectedParameterType);
                     field.getSetter().invoke(instance, new Object[]{castedParameter});
-                } catch (InvocationTargetException e) {
-                    if (row.get(column) != null) {
-                        throw new MappingException("Can't invoke setter " + field.getSetter() + "[clazz="
-                                + clazz.getName() + "] for parameter " + row.get(column).getClass() + " [row=" + toString(row) + "].", e);
-                    } else {
-                        throw new MappingException("Can't invoke setter " + field.getSetter() + " for class "
-                                + clazz.getName() + " [row=" + toString(row) + "].", e);
-                    }
-                } catch (RuntimeException e) {
+                } catch (InvocationTargetException | RuntimeException e) {
                     if (row.get(column) != null) {
                         throw new MappingException("Can't invoke setter " + field.getSetter() + "[clazz="
                                 + clazz.getName() + "] for parameter " + row.get(column).getClass() + " [row=" + toString(row) + "].", e);
@@ -393,7 +386,7 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
             }
         }
 
-        if (!columnNameByLowercaseColumnName.isEmpty()) {
+        if (!allowPartialRow && !columnNameByLowercaseColumnName.isEmpty()) {
             StringBuilder message = new StringBuilder("There is uninitialized field(s) remained in the entity ")
                     .append(instance);
 
@@ -405,7 +398,11 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
                 message.append(columnName).append('\'');
             }
 
-            message.append(".\n\tStack trace:");
+            message.append('.');
+
+            String exceptionMessage = message.toString();
+
+            message.append("\n\tStack trace:");
 
             StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
 
@@ -418,22 +415,43 @@ class TypeOracleImpl<T> extends TypeOracle<T> {
             }
 
             message.append('.');
-
             logger.error(message.toString());
+
+            throw new DatabaseException(exceptionMessage);
         }
 
         return instance;
     }
 
-    @Override
-    public List<T> convertFromRows(List<Row> rows) {
-        List<T> instances = new ArrayList<T>(rows.size());
+    public List<T> convertFromRows(List<Row> rows, boolean allowPartialRow) {
+        List<T> instances = new ArrayList<>(rows.size());
         for (Row row : rows) {
-            instances.add(convertFromRow(row));
+            instances.add(convertFromRow(row, allowPartialRow));
         }
         return instances;
     }
 
+    @Override
+    public T convertFromRow(Row row) {
+        return convertFromRow(row, false);
+    }
+
+    @Override
+    public List<T> convertFromRows(List<Row> rows) {
+        return convertFromRows(rows, false);
+    }
+
+    @Override
+    public T convertFromPartialRow(Row row) {
+        return convertFromRow(row, true);
+    }
+
+    @Override
+    public List<T> convertFromPartialRows(List<Row> rows) {
+        return convertFromRows(rows, true);
+    }
+
+    @SuppressWarnings("unused")
     private static class Field {
         private FastMethod setter;
         private FastMethod getter;
