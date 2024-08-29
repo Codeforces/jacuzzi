@@ -7,6 +7,7 @@ import java.util.Map;
 /**
  * @author Mike Mirzayanov
  */
+@SuppressWarnings("unused")
 class CachedTypeOracle<T> extends TypeOracle<T> {
     private static final ThreadLocal<Map<Class<?>, TypeOracle<?>>> threadLocalCache = new ThreadLocal<Map<Class<?>, TypeOracle<?>>>() {
         @Override
@@ -47,6 +48,16 @@ class CachedTypeOracle<T> extends TypeOracle<T> {
     @Override
     public List<T> convertFromRows(List<Row> rows) {
         return typeOracle.convertFromRows(rows);
+    }
+
+    @Override
+    public T convertFromPartialRow(Row row) {
+        return typeOracle.convertFromPartialRow(row);
+    }
+
+    @Override
+    public List<T> convertFromPartialRows(List<Row> rows) {
+        return typeOracle.convertFromPartialRows(rows);
     }
 
     @Override

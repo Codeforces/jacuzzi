@@ -20,6 +20,10 @@ public abstract class TypeOracle<T> {
 
     public abstract List<T> convertFromRows(List<Row> rows);
 
+    public abstract T convertFromPartialRow(Row row);
+
+    public abstract List<T> convertFromPartialRows(List<Row> rows);
+
     abstract String getFieldList(boolean includeId, boolean useTablePrefix, OperationType operationType);
 
     abstract String getValuesPatternListForInsert(boolean includeId, T instance);
