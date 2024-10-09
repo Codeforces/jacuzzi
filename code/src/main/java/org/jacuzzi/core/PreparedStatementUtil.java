@@ -328,14 +328,26 @@ class PreparedStatementUtil {
     static Object prepareResultSetGetObject(Object object) {
         if (object == null) {
             return null;
-        }
-
-        if (object instanceof BigInteger) {
+        } else if (object instanceof BigInteger) {
             BigInteger bigInteger = (BigInteger) object;
             try {
                 object = bigInteger.longValueExact();
             } catch (ArithmeticException ignored) {
                 // No operations.
+            }
+        } else if (object instanceof Blob) {
+            Blob blob = (Blob) object;
+            try {
+                object = blob.getBytes(1, (int) blob.length());
+            } catch (SQLException e) {
+                throw new DatabaseException("Can't read blob.", e);
+            }
+        } else if (object instanceof Clob) {
+            Clob clob = (Clob) object;
+            try {
+                object = clob.getSubString(1, (int) clob.length());
+            } catch (SQLException e) {
+                throw new DatabaseException("Can't read clob.", e);
             }
         }
 
