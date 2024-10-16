@@ -3,6 +3,7 @@ package org.jacuzzi.core;
 import javax.sql.DataSource;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -277,12 +278,38 @@ public abstract class GenericDaoImpl<T, K> implements GenericDao<T, K> {
                     }
                 }
             } else {
-                throw new DatabaseException(
-                        "Unexpected number of rows with generated keys: " + generatedKeys.size() + " instead of " +
-                                objects.size() + '.'
-                );
+                if (generatedKeys.size() == 1) {
+                    Collection<Object> keys = result.getGeneratedKeysForRow(0).values();
+
+                    if (keys.size() == 1) {
+                        Object key = keys.iterator().next();
+                        for (T object : objects) {
+                            typeOracle.setIdValue(object, key);
+                            key = increaseKey(key);
+                        }
+                    }
+                } else {
+                    throw new DatabaseException("Unexpected number of rows with generated keys: "
+                            + generatedKeys.size() + " instead of " + objects.size() + '.');
+                }
             }
         }
+    }
+
+    private Object increaseKey(Object key) {
+        if (key instanceof Long) {
+            return (Long) key + 1;
+        } else if (key instanceof Integer) {
+            return (Integer) key + 1;
+        } else if (key instanceof Short) {
+            return (Short) key + 1;
+        } else if (key instanceof Byte) {
+            return (Byte) key + 1;
+        } else if (key instanceof BigInteger) {
+            return ((BigInteger) key).add(BigInteger.ONE);
+        }
+
+        throw new DatabaseException("Can't increase key of type " + key.getClass().getName() + '.');
     }
 
     @Override
