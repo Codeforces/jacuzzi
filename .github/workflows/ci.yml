@@ -22,10 +22,10 @@ jobs:
         with:
           java-version: 17
           distribution: "adopt"
-      - name: Install
+      - name: Test
         run: |
           cd code
-          mvn --batch-mode install
+          mvn --batch-mode test
   deploy:
     if: github.ref == 'refs/heads/master' && github.repository_owner == 'Codeforces'
     needs: test
